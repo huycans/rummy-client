@@ -1,6 +1,6 @@
 async function getServerMessage() {
   try {
-    let response = await fetch("https://localhost:3000", {
+    let response = await fetch("https://localhost:3000/welcome", {
       method: "GET",
       headers: {
         Accept: "application/json",
