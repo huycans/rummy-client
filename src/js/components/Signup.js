@@ -4,8 +4,11 @@ import {
   Link
 } from "react-router-dom";
 
-export default class Signup extends Component {
-  render() {
+const Signup = ({ handleInputUsername, handleInputPassword, username, password, signup }) => {
+  const signingUp = (e) => {
+    e.preventDefault();
+    signup();
+  }
     return (
       <ContextConsumer>
         {value =>
@@ -19,23 +22,25 @@ export default class Signup extends Component {
             <div className="row">
               <form>
                 <div className="row w-100">
-                  <label for="username">
+                  <label htmlFor="username">
                     Username: &nbsp;
-                    <input maxLength={50} type="text" name="username" />
+                    <input minLength={3} maxLength={50} type="text" name="username" value={username}
+                      onChange={handleInputUsername} />
                   </label>
                   <br />
                 </div>
 
                 <div className="row w-100">
-                  <label for="username">
+                  <label htmlFor="username">
                     Password: &nbsp;
-                  <input maxLength={50} type="password" name="password" />
+                  <input minLength={5} maxLength={50} type="password" name="password" value={password}
+                      onChange={handleInputPassword} />
                   </label>
                   <br />
                 </div>
 
                 <div className="row">
-                  <input type="submit" value="Login" />
+                  <input type="submit" value="Signup" onClick={signingUp}/>
                 </div>
               </form>
             </div>
@@ -43,11 +48,11 @@ export default class Signup extends Component {
               <br />
               <br />
               <h4>Already have an account?</h4>
-              <Link to="/signin">Click here</Link>
+              <Link to="/">Click here</Link>
             </div>
           </div>
         }
       </ContextConsumer>
-    );
-  }
+      )
 }
+export default Signup;
