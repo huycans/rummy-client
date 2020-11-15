@@ -32,6 +32,32 @@ export default class Game extends Component {
     this.cancelMeld = this.cancelMeld.bind(this);
     this.dealing = this.dealing.bind(this);
     this.sortHand = this.sortHand.bind(this);
+    this.draw = this.draw.bind(this);
+  }
+
+  draw(){
+    let {isDrawing, deck, discardPile, lowerhand} = this.state;
+    let self=this;
+    if (isDrawing){
+      //if draw from deck
+      deck.click(function (card) {
+        lowerhand.addCard(deck.topCard());
+        lowerhand.render();
+        //disable drawing from both deck and pile
+        deck.click(function () { });
+        discardPile.click(function () { });
+        self.setState({ isDrawing: false });
+      });
+      //if draw from discard pile
+      discardPile.click(function (card) {
+        lowerhand.addCard(discardPile.topCard());
+        lowerhand.render();
+        //disable drawing from both deck and pile
+        deck.click(function () { });
+        discardPile.click(function () { });
+        self.setState({ isDrawing: false });
+      });
+    }
   }
 
   cancelMeld(){
@@ -87,24 +113,6 @@ export default class Game extends Component {
     discardPile.x += 50;
 
     var meldPile = [];
-    //create test melds
-    // for (var i=1; i<=3; i++){
-    //   var newMeld = new cards.Hand({ faceUp: true, y: 1 });
-    //   newMeld.addCard(new cards.Card('s', 5, tableName));
-    //   newMeld.addCard(new cards.Card('s', 6, tableName));
-    //   newMeld.addCard(new cards.Card('s', 7, tableName));
-    //   newMeld.resize("small");
-    //   newMeld.x = newMeld.x - 220;
-    //   newMeld.y = newMeld.y + i*250/5;
-
-    //   meldPile.push(newMeld);
-    // }
-
-    //render the melds
-    // for (const meld of meldPile){
-    //   console.log(meld);
-    //   meld.render();
-    // }
 
     //this holds the 3 cards that user want to meld
     //set it to slightly overlap the deck
@@ -162,6 +170,11 @@ export default class Game extends Component {
       discardPile.addCard(deck.topCard());
       discardPile.render();
     });
+
+    //allow drawing cards
+    //also disable meld
+    this.setState({ isDrawing: true }, () => { this.draw()});
+    
   }
 
   handleMeld() {
