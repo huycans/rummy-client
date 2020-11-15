@@ -10,7 +10,7 @@ var cards = function() {
       height: 94,
       padding: 18
     },
-    animationSpeed: 500,
+    animationSpeed: 100,
     table: 'body',
     cardback: 'red',
     acesHigh: false,

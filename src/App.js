@@ -23,10 +23,13 @@ class App extends Component {
     this.state = {
       message: "Hello from context store",
       errorMsg: "",
-      token: "",
       username: "",
       password: "",
-      user: null//the user info object
+      // token: "",
+      // user: null//the user info object
+      user: "sss",
+      token: "sss",
+      hasGameStarted: false
     };
     this.toggleLoading = this.toggleLoading.bind(this);
     this.signin = this.signin.bind(this);
@@ -35,8 +38,13 @@ class App extends Component {
     this.handleInputUsername = this.handleInputUsername.bind(this);
     this.handleInputPassword = this.handleInputPassword.bind(this);
     this.setErrorMessage = this.setErrorMessage.bind(this);
+    this.startingGame = this.startingGame.bind(this);
   }
-
+  startingGame(){
+    this.setState({
+      hasGameStarted: true
+    })
+  }
   handleInputUsername(event) {
     this.setState({ username: event.target.value });
   }
@@ -107,13 +115,13 @@ class App extends Component {
     //toggle the spinning icon 
   }
   render() {
-    const { errorMsg, username, password, user, token } = this.state;
+    const { errorMsg, username, password, user, token, hasGameStarted } = this.state;
     const isSignedIn = user !== null && token !== "";
     return (
       <BrowserRouter>
         <ContextProvider value={this.state}>
-          <div className="App container d-flex h-100">
-            <div className="row error-message">
+          <div className="App">
+            <div className="error-message">
               {errorMsg ? errorMsg : null}
 
             </div>
@@ -125,7 +133,7 @@ class App extends Component {
               </AuthRoute>
               
               <AuthRoute isSignedIn={isSignedIn} type="private" path="/game">
-                <Game />
+                <Game hasGameStarted={hasGameStarted} startingGame={this.startingGame}/>
               </AuthRoute>
 
               <AuthRoute isSignedIn={isSignedIn} type="guest" path="/">

@@ -70,14 +70,23 @@ a:visited {color:blue;}
 
 #meld-layoff {
 	position: absolute;
-	right: 30px;
+	right: 20px;
+	bottom: 90px;
+	width: 120px;
+}
+
+#cancel-meld{
+	position: absolute;
+	right: 20px;
 	bottom: 50px;
+	width: 120px;
 }
 
 #sort-hand {
 	position: absolute;
-	right: 30px;
+	right: 20px;
 	bottom: 10px;
+	width: 120px;
 }
 
 footer {
