@@ -14,7 +14,9 @@ export default class Game extends Component {
       isLayingOff: false, //(add 1 card to 1 of the melds)
       isWaiting: false, //(for server command, other player's turn...)
       isDrawing: false, //(from deck or discard pile)
-      isDiscarding: false, //(remove 1 card from hand to discard pile)
+      isDiscarding: false, //(remove 1 card from hand to discard pile),
+      hasDrawn: false,
+      hasDiscarded: false,
       cards: null,
       tableName: null,
       deck: null,
@@ -36,18 +38,30 @@ export default class Game extends Component {
     this.dealing = this.dealing.bind(this);
     this.sortHand = this.sortHand.bind(this);
     this.draw = this.draw.bind(this);
+    this.discard = this.discard.bind(this);
     this.setGameState = this.setGameState.bind(this);
   }
 
+  discard() {
+    let { currentSelectedCardHand, isDiscarding, lowerhand, discardPile } = this.state;
+    if (isDiscarding) {
+      lowerhand.removeCard(currentSelectedCardHand);
+      discardPile.addCard(currentSelectedCardHand);
+      discardPile.render();
+      lowerhand.render();
+      this.setGameState("isWaiting");
+      this.setState({ hasDiscarded: true });
+    }
+  }
 
-  setGameState(stateToSet, callback){
+  setGameState(stateToSet, callback) {
     this.setState({
-      isMelding: stateToSet=="isMelding" ? true: false, //(pick 3 cards to meld)
+      isMelding: stateToSet == "isMelding" ? true : false, //(pick 3 cards to meld)
       isLayingOff: stateToSet == "isLayingOff" ? true : false, //(add 1 card to 1 of the melds)
       isWaiting: stateToSet == "isWaiting" ? true : false, //(for server command, other player's turn...)
       isDrawing: stateToSet == "isDrawing" ? true : false, //(from deck or discard pile)
       isDiscarding: stateToSet == "isDiscarding" ? true : false, //(remove 1 card from hand to discard pile)
-    }, callback)
+    }, callback);
   }
 
 
@@ -63,7 +77,8 @@ export default class Game extends Component {
         self.setGameState("isDiscarding");
         self.setState({
           currentSelectedCardDeck: null,
-          currentSelectedCardDiscard: null
+          currentSelectedCardDiscard: null,
+          hasDrawn: true
         });
       } else if (currentSelectedCardDiscard != null) {
         //if draw from discard pile
@@ -73,7 +88,8 @@ export default class Game extends Component {
         self.setGameState("isDiscarding");
         self.setState({
           currentSelectedCardDeck: null,
-          currentSelectedCardDiscard: null
+          currentSelectedCardDiscard: null,
+          hasDrawn: true
         });
       }
     }
@@ -91,7 +107,8 @@ export default class Game extends Component {
       currentMeld.render();
       // lowerhand.click(function () { });
     }
-    this.setState({ isMelding: false, currentSelectedCardHand: null });
+    this.setGameState("isDiscarding");
+    this.setState({ currentSelectedCardHand: null });
   }
 
   sortHand() {
@@ -148,7 +165,7 @@ export default class Game extends Component {
       currentMeld
     });
 
-    //setup click event, these will simply set the clicked card into state
+    //setup click event, these will simply set the clicked card into state and call relevant event handler
     let self = this;
     lowerhand.click(function (card) {
       if (self.state.isMelding) {
@@ -156,6 +173,7 @@ export default class Game extends Component {
       }
       if (self.state.isDiscarding) {
         //TODO: discard the card
+        self.setState({ currentSelectedCardHand: card }, () => self.discard());
       }
     });
 
@@ -214,7 +232,6 @@ export default class Game extends Component {
     this.setGameState("isDrawing", () => this.draw());
 
   }
-
 
   handleMeld() {
     //put cancel meld button on
@@ -291,17 +308,40 @@ export default class Game extends Component {
 
   render() {
     const { hasGameStarted } = this.props;
-    const { isMelding } = this.state;
+    const { isMelding, hasDiscarded, hasDrawn, isWaiting } = this.state;
+    const disableMeldLayoffButton = () => {
+      if (isWaiting) {
+        return true;
+      } else if (isMelding === true) {
+        //or melding/layoff is in progress
+        return true;
+      }
+      else if (hasDrawn && !hasDiscarded) {
+        //if user has drawn a card but has not discard a card yet
+        return false;
+      }
+      return true;
+    };
+
     const handref = <div id="hand" ref={this.handRef} />;
     return (
       <div>
         <p>Welcome to the game</p>
-        <button id="start-btn" style={{ display: !hasGameStarted ? "inline" : "none" }} onClick={this.startGame}>Start the game</button>
+        <button id="start-btn" style={{ display: !hasGameStarted ? "inline" : "none" }}
+          onClick={this.startGame}>Start the game</button>
         <div id="card-table">
-          <button style={{ display: hasGameStarted ? "block" : "none" }} id="deal" onClick={this.dealing}>DEAL</button>
-          <button disabled={isMelding} style={{ display: hasGameStarted ? "block" : "none" }} id="meld-layoff" onClick={() => this.setGameState("isMelding")}>Meld/layoff</button>
-          <button style={{ display: hasGameStarted & isMelding ? "block" : "none" }} id="cancel-meld" onClick={this.cancelMeld}>Cancel meld</button>
-          <button style={{ display: hasGameStarted ? "block" : "none" }} id="sort-hand" onClick={this.sortHand}>Sort hand</button>
+          <button style={{ display: hasGameStarted ? "block" : "none" }}
+            id="deal" onClick={this.dealing}>DEAL</button>
+          <button disabled={disableMeldLayoffButton()} style={{ display: hasGameStarted ? "block" : "none" }}
+            id="meld-layoff"
+            onClick={() => this.setGameState("isMelding")}
+          >Meld/layoff</button>
+          <button style={{ display: hasGameStarted & isMelding ? "block" : "none" }}
+            id="cancel-meld" onClick={this.cancelMeld}
+          >Cancel meld</button>
+          <button style={{ display: hasGameStarted ? "block" : "none" }}
+            id="sort-hand" onClick={this.sortHand}
+          >Sort hand</button>
         </div>
 
 
