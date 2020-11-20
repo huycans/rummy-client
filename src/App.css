@@ -68,7 +68,14 @@ a:visited {color:blue;}
 	top:170px;
 }
 
-#meld-layoff {
+#meld {
+	position: absolute;
+	right: 20px;
+	bottom: 130px;
+	width: 120px;
+}
+
+#layoff {
 	position: absolute;
 	right: 20px;
 	bottom: 90px;
