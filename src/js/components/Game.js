@@ -2,7 +2,7 @@ import React, { Component, useRef } from "react";
 // import Deck from './Cards/lib/deck';
 import Cards from './lib/card.js/cards';
 import $ from 'jquery';
-import cards from "./lib/card.js/cards";
+
 
 
 export default class Game extends Component {
@@ -12,7 +12,7 @@ export default class Game extends Component {
     this.state = {
       isMelding: false, //(pick 3 cards to meld)
       isLayingOff: false, //(add 1 card to 1 of the melds)
-      isWaiting: false, //(for server command)
+      isWaiting: false, //(for server command, other player's turn...)
       isDrawing: false, //(from deck or discard pile)
       isDiscarding: false, //(remove 1 card from hand to discard pile)
       cards: null,
@@ -22,45 +22,64 @@ export default class Game extends Component {
       upperhand: null,
       discardPile: null,
       meldPile: null,
-      currentMeld: null
+      currentMeld: null,
+      currentSelectedCardHand: null,
+      currentSelectedCardDeck: null,
+      currentSelectedCardDiscard: null
+      //currentSelectedMeld
     };
 
     this.handRef = React.createRef();
-
     this.startGame = this.startGame.bind(this);
     this.handleMeld = this.handleMeld.bind(this);
     this.cancelMeld = this.cancelMeld.bind(this);
     this.dealing = this.dealing.bind(this);
     this.sortHand = this.sortHand.bind(this);
     this.draw = this.draw.bind(this);
+    this.setGameState = this.setGameState.bind(this);
   }
 
-  draw(){
-    let {isDrawing, deck, discardPile, lowerhand} = this.state;
-    let self=this;
-    if (isDrawing){
-      //if draw from deck
-      deck.click(function (card) {
+
+  setGameState(stateToSet, callback){
+    this.setState({
+      isMelding: stateToSet=="isMelding" ? true: false, //(pick 3 cards to meld)
+      isLayingOff: stateToSet == "isLayingOff" ? true : false, //(add 1 card to 1 of the melds)
+      isWaiting: stateToSet == "isWaiting" ? true : false, //(for server command, other player's turn...)
+      isDrawing: stateToSet == "isDrawing" ? true : false, //(from deck or discard pile)
+      isDiscarding: stateToSet == "isDiscarding" ? true : false, //(remove 1 card from hand to discard pile)
+    }, callback)
+  }
+
+
+  draw() {
+    let { isDrawing, deck, discardPile, lowerhand, currentSelectedCardDeck, currentSelectedCardDiscard } = this.state;
+    let self = this;
+    if (isDrawing) {
+      if (currentSelectedCardDeck != null) {
+        //if draw from deck
         lowerhand.addCard(deck.topCard());
         lowerhand.render();
-        //disable drawing from both deck and pile
-        deck.click(function () { });
-        discardPile.click(function () { });
-        self.setState({ isDrawing: false });
-      });
-      //if draw from discard pile
-      discardPile.click(function (card) {
+
+        self.setGameState("isDiscarding");
+        self.setState({
+          currentSelectedCardDeck: null,
+          currentSelectedCardDiscard: null
+        });
+      } else if (currentSelectedCardDiscard != null) {
+        //if draw from discard pile
         lowerhand.addCard(discardPile.topCard());
         lowerhand.render();
-        //disable drawing from both deck and pile
-        deck.click(function () { });
-        discardPile.click(function () { });
-        self.setState({ isDrawing: false });
-      });
+
+        self.setGameState("isDiscarding");
+        self.setState({
+          currentSelectedCardDeck: null,
+          currentSelectedCardDiscard: null
+        });
+      }
     }
   }
 
-  cancelMeld(){
+  cancelMeld() {
     let { currentMeld, lowerhand } = this.state;
     //return all cards from currentMeld to lowerhand
     const length = currentMeld.length;
@@ -70,9 +89,9 @@ export default class Game extends Component {
       currentMeld.removeCard(card);
       lowerhand.render();
       currentMeld.render();
-      lowerhand.click(function () {  })
+      // lowerhand.click(function () { });
     }
-    this.setState({isMelding: false})
+    this.setState({ isMelding: false, currentSelectedCardHand: null });
   }
 
   sortHand() {
@@ -129,6 +148,27 @@ export default class Game extends Component {
       currentMeld
     });
 
+    //setup click event, these will simply set the clicked card into state
+    let self = this;
+    lowerhand.click(function (card) {
+      if (self.state.isMelding) {
+        self.setState({ currentSelectedCardHand: card }, () => self.handleMeld());
+      }
+      if (self.state.isDiscarding) {
+        //TODO: discard the card
+      }
+    });
+
+    deck.click(function (card) {
+      if (self.state.isDrawing)
+        self.setState({ currentSelectedCardDeck: card }, () => self.draw());
+
+    });
+
+    discardPile.click(function (card) {
+      if (self.state.isDrawing)
+        self.setState({ currentSelectedCardDiscard: card }, () => self.draw());
+    });
 
     //When you click on the top card of a deck, a card is added
     //to your hand
@@ -138,7 +178,6 @@ export default class Game extends Component {
     //     lowerhand.render();
     //   }
     // });
-
 
     //Finally, when you click a card in your hand, if it's
     //the same suit or rank as the top card of the discard pile
@@ -158,9 +197,8 @@ export default class Game extends Component {
   }
 
   dealing() {
-    //Let's deal when the Deal button is pressed:
-    //Deck has a built in method to deal to hands.
-    const { cards, discardPile, deck, lowerhand, upperhand } = this.state;
+    //this is simply the animation, because the cards dealt is given by the server
+    const { discardPile, deck, lowerhand, upperhand } = this.state;
     $('#deal').hide();
     // cards.shuffle(deck);
     // deck.deal(1, [upperhand, lowerhand], 50, function () {
@@ -173,102 +211,70 @@ export default class Game extends Component {
 
     //allow drawing cards
     //also disable meld
-    this.setState({ isDrawing: true }, () => { this.draw()});
-    
+    this.setGameState("isDrawing", () => this.draw());
+
   }
 
+
   handleMeld() {
-    //user has clicked on meld btn
-    let gameComp = this;
+    //put cancel meld button on
+    let validMeld = false;
+    let { cards, lowerhand, currentMeld, meldPile } = this.state;
+    let card = this.state.currentSelectedCardHand;
 
-    this.setState({ isMelding: true },
-      () => {
-        //put cancel meld button on
-        let validMeld = false;
-        let { cards, lowerhand, currentMeld, meldPile } = this.state;
-        lowerhand.click(function (card) {
-          //if there are less then 3 cards, just add them to currentMeld
-          if (currentMeld.length < 2) {
-            currentMeld.addCard(card);
-            lowerhand.removeCard(card);
-            currentMeld.sort();
-            lowerhand.render();
-            currentMeld.render();
-          }
-          else if (currentMeld.length == 2) {
-            //currentMeld has 2 cards already, adding a third will perform a check
-            //if check is valid, add cards to the meld pile
-            currentMeld.addCard(card);
-            lowerhand.removeCard(card);
-            currentMeld.sort();
-            //three in a row, same suit
-            if (currentMeld[0].suit == currentMeld[1].suit && currentMeld[1].suit == currentMeld[2].suit) {
-              if (Math.abs(currentMeld[0].rank - currentMeld[1].rank) == 1
-                && Math.abs((currentMeld[1].rank - currentMeld[2].rank)) == 1) {
-                validMeld = true;
-              }
-            }
-            else {
-              //or three of same rank, diff suit
-              if ((currentMeld[0].rank) == currentMeld[1].rank && (currentMeld[1].rank) == currentMeld[2].rank) {
-                validMeld = true;
-              }
-            }
-            if (validMeld) {
-              //move the cards into meld pile, remove them from currentMeld
-              let newMeld = new cards.Hand({ faceUp: true, y: 1 });
+    //if there are less then 3 cards, just add them to currentMeld
+    if (currentMeld.length < 2) {
+      currentMeld.addCard(card);
+      lowerhand.removeCard(card);
+      currentMeld.sort();
+      lowerhand.render();
+      currentMeld.render();
+    }
+    else if (currentMeld.length == 2) {
+      //currentMeld has 2 cards already, adding a third will perform a check
+      //if check is valid, add cards to the meld pile
+      currentMeld.addCard(card);
+      lowerhand.removeCard(card);
+      currentMeld.sort();
+      //three in a row, same suit
+      if (currentMeld[0].suit == currentMeld[1].suit && currentMeld[1].suit == currentMeld[2].suit) {
+        if (Math.abs(currentMeld[0].rank - currentMeld[1].rank) == 1
+          && Math.abs((currentMeld[1].rank - currentMeld[2].rank)) == 1) {
+          validMeld = true;
+        }
+      }
+      else {
+        //or three of same rank, diff suit
+        if ((currentMeld[0].rank) == currentMeld[1].rank && (currentMeld[1].rank) == currentMeld[2].rank) {
+          validMeld = true;
+        }
+      }
+      if (validMeld) {
+        //move the cards into meld pile, remove them from currentMeld
+        let newMeld = new cards.Hand({ faceUp: true, y: 1 });
 
-              const length = currentMeld.length;
-              for (let i = 0; i < length; i++) {
-                let card = currentMeld.pop();
-                newMeld.addCard(card);
-                currentMeld.removeCard(card);
-              }
+        const length = currentMeld.length;
+        for (let i = 0; i < length; i++) {
+          let card = currentMeld.pop();
+          newMeld.addCard(card);
+          currentMeld.removeCard(card);
+        }
 
-              newMeld.x = newMeld.x - 230;
-              newMeld.y = newMeld.y + (meldPile.length + 1) * 250 / 5;
-              meldPile.push(newMeld);
-              newMeld.resize("small");
-              newMeld.render();
-              currentMeld.render();
+        newMeld.x = newMeld.x - 230;
+        newMeld.y = newMeld.y + (meldPile.length + 1) * 250 / 5;
+        meldPile.push(newMeld);
+        newMeld.resize("small");
+        newMeld.render();
+        currentMeld.render();
 
-              gameComp.setState({ isMelding: false });
-
-
-
-              // for (var i=1; i<=3; i++){
-              //   var newMeld = new cards.Hand({ faceUp: true, y: 1 });
-              //   newMeld.addCard(new cards.Card('s', 5, tableName));
-              //   newMeld.addCard(new cards.Card('s', 6, tableName));
-              //   newMeld.addCard(new cards.Card('s', 7, tableName));
-              //   newMeld.resize("small");
-              //   newMeld.x = newMeld.x - 220;
-              //   newMeld.y = newMeld.y + i*250/5;
-
-              //   meldPile.push(newMeld);
-              // }
-
-              //render the melds
-              // for (const meld of meldPile){
-              //   console.log(meld);
-              //   meld.render();
-              // }
-
-
-              //remove the click handler
-              lowerhand.click(function () { });
-            }
-            else {
-              alert("meld not valid");
-            }
-            lowerhand.render();
-            currentMeld.render();
-          }
-
-        });
-
-        
-      })
+        this.setState({ isMelding: false, isDiscarding: true, currentSelectedCardHand: null });
+      }
+      else {
+        alert("meld not valid");
+      }
+      lowerhand.render();
+      currentMeld.render();
+    }
     //user click on three cards, store clicked cards in state
     //where to put on onclick func? on each cards, check if isMelding, raise the card, then add them to this.state.currentMeld?
     //if 3 cards is valid, move them to meld pile
@@ -284,8 +290,8 @@ export default class Game extends Component {
   }
 
   render() {
-    const { hasGameStarted  } = this.props;
-    const { isMelding} = this.state;
+    const { hasGameStarted } = this.props;
+    const { isMelding } = this.state;
     const handref = <div id="hand" ref={this.handRef} />;
     return (
       <div>
@@ -293,7 +299,7 @@ export default class Game extends Component {
         <button id="start-btn" style={{ display: !hasGameStarted ? "inline" : "none" }} onClick={this.startGame}>Start the game</button>
         <div id="card-table">
           <button style={{ display: hasGameStarted ? "block" : "none" }} id="deal" onClick={this.dealing}>DEAL</button>
-          <button disabled={isMelding} style={{ display: hasGameStarted ? "block" : "none" }} id="meld-layoff" onClick={this.handleMeld}>Meld/layoff</button>
+          <button disabled={isMelding} style={{ display: hasGameStarted ? "block" : "none" }} id="meld-layoff" onClick={() => this.setGameState("isMelding")}>Meld/layoff</button>
           <button style={{ display: hasGameStarted & isMelding ? "block" : "none" }} id="cancel-meld" onClick={this.cancelMeld}>Cancel meld</button>
           <button style={{ display: hasGameStarted ? "block" : "none" }} id="sort-hand" onClick={this.sortHand}>Sort hand</button>
         </div>
