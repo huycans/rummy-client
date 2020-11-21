@@ -3,7 +3,7 @@ import React, { Component, useRef } from "react";
 import Cards from './lib/card.js/cards';
 import $ from 'jquery';
 
-
+import { requestJoin } from "../components/API/game";
 
 export default class Game extends Component {
   constructor(props) {
@@ -28,7 +28,8 @@ export default class Game extends Component {
       currentSelectedCardHand: null,
       currentSelectedCardDeck: null,
       currentSelectedCardDiscard: null,
-      currentSelectedMeld: null
+      currentSelectedMeld: null,
+
     };
 
     this.handRef = React.createRef();
@@ -41,6 +42,42 @@ export default class Game extends Component {
     this.draw = this.draw.bind(this);
     this.discard = this.discard.bind(this);
     this.setGameState = this.setGameState.bind(this);
+    this.setupWebsocket = this.setupWebsocket.bind(this);
+
+    this.websocket = null;
+  }
+
+  async setupWebsocket(code="12345678"){
+    let websocket= this.websocket;
+    let wsServerURL = "wss://localhost:3000" //window.location.href.replace('http', 'ws') + "/" + code;
+    websocket = new WebSocket(wsServerURL);
+
+    try {
+      //request to join a game
+      let response = await requestJoin(code);
+      console.log(response);
+
+      //setup websocket events
+      websocket.onopen = (event) => {
+        console.log("Connected to server.");
+      };
+
+      websocket.onmessage = (message) => {
+        let data = JSON.parse(message.data);
+        console.log("data from server", data);
+
+        //TODO: handle the data
+
+      }
+    } catch (error) {
+      console.log("An error occurs when trying to join ", error);
+    }
+  }
+
+  componentWillUnmount(){
+    if (this.websocket){
+      this.websocket.close();
+    }
   }
 
   discard() {
@@ -189,6 +226,8 @@ export default class Game extends Component {
         self.setState({ currentSelectedCardDiscard: card }, () => self.draw());
     });
 
+    //setup websocket connection and handle it
+    this.setupWebsocket();
     //When you click on the top card of a deck, a card is added
     //to your hand
     // deck.click(function (card) {
@@ -267,7 +306,7 @@ export default class Game extends Component {
   }
 
   handleMeld() {
-    //put cancel meld button on
+
     let validMeld = false;
     let { cards, lowerhand, currentMeld, meldPile } = this.state;
     let card = this.state.currentSelectedCardHand;
