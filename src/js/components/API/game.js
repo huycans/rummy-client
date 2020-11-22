@@ -8,9 +8,11 @@ async function requestJoin(code) {
         "Access-Control-Allow-Origin": "*"
       }
     });
-    // console.log(response);
     let responseJSON = await response.json();
-    // console.log(responseJSON);
+
+    if (response.status==500){
+      throw responseJSON.message
+    } 
     return responseJSON;
   }
   catch (error) {

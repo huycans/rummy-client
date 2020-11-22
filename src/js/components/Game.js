@@ -4,6 +4,7 @@ import Cards from './lib/card.js/cards';
 import $ from 'jquery';
 
 import { requestJoin } from "../components/API/game";
+import gameHandler from "./GameHandler";
 
 export default class Game extends Component {
   constructor(props) {
@@ -29,7 +30,10 @@ export default class Game extends Component {
       currentSelectedCardDeck: null,
       currentSelectedCardDiscard: null,
       currentSelectedMeld: null,
-
+      //the game code to distinguish games, called lobby in server
+      code: "",
+      //randomly generated token from the server
+      token: ""
     };
 
     this.handRef = React.createRef();
@@ -42,41 +46,67 @@ export default class Game extends Component {
     this.draw = this.draw.bind(this);
     this.discard = this.discard.bind(this);
     this.setGameState = this.setGameState.bind(this);
-    this.setupWebsocket = this.setupWebsocket.bind(this);
-
-    this.websocket = null;
+    this.joinGameWithCode = this.joinGameWithCode.bind(this);
+    this.sendWSData = this.sendWSData.bind(this);
+    this.gameHandler = gameHandler.bind(this);
   }
 
-  async setupWebsocket(code="12345678"){
-    let websocket= this.websocket;
-    let wsServerURL = "wss://localhost:3000" //window.location.href.replace('http', 'ws') + "/" + code;
-    websocket = new WebSocket(wsServerURL);
+  componentDidMount() {
+    let { websocket } = this.props;
+    //setup websocket events
+    websocket.onopen = (event) => {
+      console.log("Connected to server.");
+    };
 
+    //starting an instance of card.js
+    var cards = Cards();
+    const tableName = '#card-table';
+
+    //Tell the library which element to use for the table
+    cards.init({ table: tableName });
+    this.setState({ cards, tableName });
+
+    websocket.onmessage = (message) => {
+      this.gameHandler(message);
+    };
+
+    window.addEventListener('beforeunload', () => { // Attempts to Close Socket before forced disconnect
+      if (websocket) websocket.close();
+    });
+  }
+
+  //used to send data to the server, as string
+  sendWSData(data) {
+    let { websocket } = this.props;
+    // console.log("WEBSOCKET", websocket);
+    const { code, token } = this.state;
+    //always includes token and game code when sending data
+    data.lobby = code;
+    data.token = token;
+    // Send Data (as string)
+    websocket.send(JSON.stringify(data));
+  }
+
+  //setup websocket connection to the server
+  async joinGameWithCode(code = "12345678979") {
     try {
-      //request to join a game
-      let response = await requestJoin(code);
-      console.log(response);
 
-      //setup websocket events
-      websocket.onopen = (event) => {
-        console.log("Connected to server.");
-      };
+      //request to join a game with code typed in by user
+      let joinResponse = await requestJoin(code);
 
-      websocket.onmessage = (message) => {
-        let data = JSON.parse(message.data);
-        console.log("data from server", data);
+      let token = joinResponse.token;
+      console.log(token);
 
-        //TODO: handle the data
+      this.setState({
+        code, token
+      });
 
-      }
+      //send request to join a game
+      this.sendWSData({ cmd: "join" });
+
     } catch (error) {
-      console.log("An error occurs when trying to join ", error);
-    }
-  }
-
-  componentWillUnmount(){
-    if (this.websocket){
-      this.websocket.close();
+      console.log("An error occurs when trying to join: ", error);
+      this.props.setErrorMessage("An error occurs when trying to join " + error);
     }
   }
 
@@ -153,21 +183,22 @@ export default class Game extends Component {
     lowerhand.render();
   }
 
-  startGame() {
-    //starting an instance of card.js
-    var cards = Cards();
+  startGame(e) {
+    if (e) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
     this.props.startingGame();
-    const tableName = '#card-table';
 
-    //Tell the library which element to use for the table
-    cards.init({ table: tableName });
+    console.log("Stating game");
+    let { cards } = this.state;
 
     //Create a new deck of cards
     var deck = new cards.Deck();
     //By default it's in the middle of the container, put it slightly to the side
     deck.x -= 50;
 
-    //cards.all contains all cards, put them all in the deck
+    //adding all cards to the deck
     deck.addCards(cards.all);
 
     //No animation here, just get the deck onto the table.
@@ -175,10 +206,7 @@ export default class Game extends Component {
 
     //Now lets create a couple of hands, one face down, one face up.
     var lowerhand = new cards.Hand({ faceUp: true, y: 340 });
-    var upperhand = new cards.Hand({ faceUp: true, y: 60 });
-    // var lefthand = new cards.Hand({ faceUp: true, y: 190, x: 100 });
-    // var righthand = new cards.Hand({ faceUp: true, y: 190, x: 500 });
-    // var center = new cards.Hand({ faceUp: true, y: 0, x: 0 });
+    var upperhand = new cards.Hand({ faceUp: false, y: 60 });
 
     //Lets add a discard pile
     var discardPile = new cards.Deck({ faceUp: true });
@@ -192,7 +220,6 @@ export default class Game extends Component {
     //saving state
     this.setState({
       cards,
-      tableName,
       deck,
       lowerhand,
       upperhand,
@@ -227,44 +254,94 @@ export default class Game extends Component {
     });
 
     //setup websocket connection and handle it
-    this.setupWebsocket();
-    //When you click on the top card of a deck, a card is added
-    //to your hand
-    // deck.click(function (card) {
-    //   if (card === deck.topCard()) {
-    //     lowerhand.addCard(deck.topCard());
-    //     lowerhand.render();
-    //   }
-    // });
+    this.joinGameWithCode("12131313");
 
-    //Finally, when you click a card in your hand, if it's
-    //the same suit or rank as the top card of the discard pile
-    //then it's added to it
-    // lowerhand.click(function (card) {
-    //   if (card.suit == discardPile.topCard().suit
-    //     || card.rank == discardPile.topCard().rank) {
-    //     discardPile.addCard(card);
-    //     discardPile.render();
-    //     lowerhand.render();
-    //   }
-    // });
   }
 
-  dealing() {
+  //setup the initial layout of the table
+  dealing(data) {
+    console.log("dealing");
     //this is simply the animation, because the cards dealt is given by the server
-    const { discardPile, deck, lowerhand, upperhand } = this.state;
+    const { cards, discardPile, deck, lowerhand, upperhand, meldPile } = this.state;
     $('#deal').hide();
     // cards.shuffle(deck);
     // deck.deal(1, [upperhand, lowerhand], 50, function () {
-    deck.deal(10, [lowerhand, upperhand], 50, function () {
-      //This is a callback function, called when the dealing
-      //is done.
-      discardPile.addCard(deck.topCard());
-      discardPile.render();
-    });
+    // deck.deal(10, [lowerhand, upperhand], 50, function () {
+    //   //This is a callback function, called when the dealing
+    //   //is done.
+    //   discardPile.addCard(deck.topCard());
+    //   discardPile.render();
+    // });
+
+    //adding cards that is in player's hand
+    for (let card of data.cards) {
+      let cardToAdd = cards.all.find(
+        (cardVal, cardInd) => {
+          return cardVal.suit == card.suit && cardVal.rank == card.rank
+        }
+        )
+      lowerhand.addCard(cardToAdd);
+    }
+
+    //adding cards in the discard pile
+    for (let card of data.discardPile) {
+      discardPile.addCard(cards.all.find((cardVal, cardInd) => cardVal.suit == card.suit && cardVal.rank == card.rank));
+    }
+
+    //adding fake cards to the opponent's hand
+    for (let i = 0; i < data.opcards; i++) {
+      //just add the first card, this is a dummy card, the player doesn't know what cards the opponent has
+      upperhand.addCard(cards.all[0]);
+    }
+
+    //adding fake cards to the deck
+    for (let i = 0; i < data.deck; i++) {
+      deck.addCard(cards.all[0]);
+    }
+
+    //adding melds
+    for (let meld of data.melds) {
+      //adding the cards in the current meld 
+      let meldArr = [];
+      for (let card of meld) {
+        let cardToAdd = cards.all.find(
+          (cardVal, cardInd) => {
+            return cardVal.suit == card.suit && cardVal.rank == card.rank
+          });
+        meldArr.push(cardToAdd);
+      }
+
+      let newMeld = new cards.Hand({ faceUp: true, y: 1 });
+
+      const length = meldArr.length;
+      for (let i = 0; i < length; i++) {
+        let card = meldArr.pop();
+        newMeld.addCard(card);
+      }
+
+      newMeld.x = newMeld.x - 230;
+      newMeld.y = newMeld.y + (meldPile.length + 1) * 250 / 5;
+
+      let self = this;
+      newMeld.click(function (card) {
+        if (self.state.isLayingoff) {
+          self.setState({ currentSelectedMeld: newMeld }, () => self.handleLayoff());
+        }
+      });
+
+      meldPile.push(newMeld);
+      newMeld.resize("small");
+
+
+      newMeld.render();
+    }
+    //now, render everything
+    deck.render();
+    discardPile.render();
+    lowerhand.render();
+    upperhand.render();
 
     //allow drawing cards
-    //also disable meld
     this.setGameState("isDrawing", null, () => this.draw());
 
   }
@@ -374,11 +451,8 @@ export default class Game extends Component {
     }
   }
 
-  componentDidMount() {
-
-  }
-
   render() {
+    console.log("rendering");
     const { hasGameStarted } = this.props;
     const { isMelding, hasDiscarded, hasDrawn, isWaiting, isLayingoff } = this.state;
     const disableMeldLayoffButton = () => {
