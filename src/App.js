@@ -29,7 +29,8 @@ class App extends Component {
       // user: null//the user info object
       user: "sss",
       token: "sss",
-      hasGameStarted: false
+      hasGameStarted: false,
+      websocket: new WebSocket("wss://localhost:3000")
     };
     this.toggleLoading = this.toggleLoading.bind(this);
     this.signin = this.signin.bind(this);
@@ -39,7 +40,15 @@ class App extends Component {
     this.handleInputPassword = this.handleInputPassword.bind(this);
     this.setErrorMessage = this.setErrorMessage.bind(this);
     this.startingGame = this.startingGame.bind(this);
+
   }
+
+  componentWillUnmount() {
+    if (this.state.websocket) {
+      this.state.websocket.close();
+    }
+  }
+
   startingGame(){
     this.setState({
       hasGameStarted: true
@@ -115,7 +124,7 @@ class App extends Component {
     //toggle the spinning icon 
   }
   render() {
-    const { errorMsg, username, password, user, token, hasGameStarted } = this.state;
+    const { errorMsg, username, password, user, token, hasGameStarted, websocket } = this.state;
     const isSignedIn = user !== null && token !== "";
     return (
       <BrowserRouter>
@@ -133,7 +142,11 @@ class App extends Component {
               </AuthRoute>
               
               <AuthRoute isSignedIn={isSignedIn} type="private" path="/game">
-                <Game hasGameStarted={hasGameStarted} startingGame={this.startingGame}/>
+                <Game hasGameStarted={hasGameStarted} 
+                  startingGame={this.startingGame} 
+                  setErrorMessage={this.setErrorMessage}
+                  websocket={websocket}
+                  />
               </AuthRoute>
 
               <AuthRoute isSignedIn={isSignedIn} type="guest" path="/">
