@@ -11,9 +11,10 @@ function gameHandler(message){
   if (data.cmd === "cards") {
     //setstate deck, discardPile, hand, op's hand
     this.dealing(data);
-  } else if (data.cmd == "click") {
-
   } else if (data.cmd == "draw") {
+    this.draw(data);
+
+  } else if (data.cmd == "click") {
 
   } else if (data.cmd == "discard") {
 

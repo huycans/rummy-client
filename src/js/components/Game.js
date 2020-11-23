@@ -21,8 +21,8 @@ export default class Game extends Component {
       cards: null,
       tableName: null,
       deck: null,
-      lowerhand: null,
-      upperhand: null,
+      myhand: null,
+      ophand: null,
       discardPile: null,
       meldPile: null,
       currentMeld: null,
@@ -111,12 +111,12 @@ export default class Game extends Component {
   }
 
   discard() {
-    let { currentSelectedCardHand, isDiscarding, lowerhand, discardPile } = this.state;
+    let { currentSelectedCardHand, isDiscarding, myhand, discardPile } = this.state;
     if (isDiscarding) {
-      lowerhand.removeCard(currentSelectedCardHand);
+      myhand.removeCard(currentSelectedCardHand);
       discardPile.addCard(currentSelectedCardHand);
       discardPile.render();
-      lowerhand.render();
+      myhand.render();
       this.setGameState("isWaiting", { hasDiscarded: true, currentSelectedCardHand: null });
       // this.setState({ hasDiscarded: true, currentSelectedCardHand: null });
     }
@@ -133,24 +133,25 @@ export default class Game extends Component {
     }, callback);
   }
 
-  draw() {
-    let { isDrawing, deck, discardPile, lowerhand, currentSelectedCardDeck, currentSelectedCardDiscard } = this.state;
+  draw(data) {
+    let { isDrawing, deck, discardPile, myhand, currentSelectedCardDeck, currentSelectedCardDiscard, ophand, cards } = this.state;
     let self = this;
-    if (isDrawing) {
-      if (currentSelectedCardDeck != null) {
+    //if i am drawing the card
+    // if (isDrawing && data.player == "me") { isDrawing is not needed anymore since the server will dictate when and where to draw
+    if (data.player == "me") {
+      let cardToDraw = data.card;
+      if (data.from == "deck") {
         //if draw from deck
-        lowerhand.addCard(deck.topCard());
-        lowerhand.render();
+        myhand.addCard(deck.find((cardVal) => cardVal.suit == cardToDraw.suit && cardVal.rank == cardToDraw.rank ));
 
         self.setGameState("isDiscarding", {
           currentSelectedCardDeck: null,
           currentSelectedCardDiscard: null,
           hasDrawn: true
         });
-      } else if (currentSelectedCardDiscard != null) {
+      } else {
         //if draw from discard pile
-        lowerhand.addCard(discardPile.topCard());
-        lowerhand.render();
+        myhand.addCard(discardPile.topCard());
 
         self.setGameState("isDiscarding", {
           currentSelectedCardDeck: null,
@@ -159,18 +160,55 @@ export default class Game extends Component {
         });
       }
     }
+    else {
+      //the opponent is drawing a card
+      if (data.from == "deck") {
+        //if draw from deck
+        deck.push(cards.getFakeCards());
+        ophand.addCard(deck.topCard());
+      } else {
+        //if draw from discard pile
+        ophand.addCard(discardPile.topCard());
+      }
+      
+    }
+    myhand.render();
+    ophand.render();
+    discardPile.render();
+
+      // if (currentSelectedCardDeck != null) {
+      //   //if draw from deck
+      //   myhand.addCard(deck.topCard());
+      //   myhand.render();
+
+      //   self.setGameState("isDiscarding", {
+      //     currentSelectedCardDeck: null,
+      //     currentSelectedCardDiscard: null,
+      //     hasDrawn: true
+      //   });
+      // } else if (currentSelectedCardDiscard != null) {
+      //   //if draw from discard pile
+      //   myhand.addCard(discardPile.topCard());
+      //   myhand.render();
+
+      //   self.setGameState("isDiscarding", {
+      //     currentSelectedCardDeck: null,
+      //     currentSelectedCardDiscard: null,
+      //     hasDrawn: true
+      //   });
+
   }
 
   cancelMeldOrLayoff() {
-    let { currentMeld, lowerhand, isMelding, isLayingoff } = this.state;
+    let { currentMeld, myhand, isMelding, isLayingoff } = this.state;
     if (isMelding || isLayingoff) {
-      //return all cards from currentMeld to lowerhand
+      //return all cards from currentMeld to myhand
       const length = currentMeld.length;
       for (let i = 0; i < length; i++) {
         let card = currentMeld.pop();
-        lowerhand.addCard(card);
+        myhand.addCard(card);
         currentMeld.removeCard(card);
-        lowerhand.render();
+        myhand.render();
         currentMeld.render();
       }
       this.setGameState("isDiscarding", { currentSelectedCardHand: null });
@@ -178,9 +216,9 @@ export default class Game extends Component {
   }
 
   sortHand() {
-    let { lowerhand } = this.state;
-    lowerhand.sort();
-    lowerhand.render();
+    let { myhand } = this.state;
+    myhand.sort();
+    myhand.render();
   }
 
   startGame(e) {
@@ -205,8 +243,8 @@ export default class Game extends Component {
     deck.render({ immediate: true });
 
     //Now lets create a couple of hands, one face down, one face up.
-    var lowerhand = new cards.Hand({ faceUp: true, y: 340 });
-    var upperhand = new cards.Hand({ faceUp: false, y: 60 });
+    var myhand = new cards.Hand({ faceUp: true, y: 340 });
+    var ophand = new cards.Hand({ faceUp: false, y: 60 });
 
     //Lets add a discard pile
     var discardPile = new cards.Deck({ faceUp: true });
@@ -220,7 +258,7 @@ export default class Game extends Component {
 
     //setup click event, these will simply set the clicked card into state and call relevant event handler
     let self = this;
-    lowerhand.click(function (card) {
+    myhand.click(function (card) {
       if (self.state.isMelding) {
         self.setState({ currentSelectedCardHand: card }, () => self.handleMeld());
       }
@@ -234,21 +272,36 @@ export default class Game extends Component {
 
     deck.click(function (card) {
       if (self.state.isDrawing)
-        self.setState({ currentSelectedCardDeck: card }, () => self.draw());
+        self.setState({ currentSelectedCardDeck: card }, () => {
+          self.sendWSData({
+            cmd: "draw",
+            from: "deck"
+          })
+
+          //this should be called when receiving command
+          // self.draw();
+        });
 
     });
 
     discardPile.click(function (card) {
       if (self.state.isDrawing)
-        self.setState({ currentSelectedCardDiscard: card }, () => self.draw());
+        self.setState({ currentSelectedCardDiscard: card }, () => {
+          self.sendWSData({
+            cmd: "draw",
+            from: "discardPile",
+            rank: card.rank, 
+            suit: card.suit
+          })
+        });
     });
 
     //saving state
     this.setState({
       cards,
       deck,
-      lowerhand,
-      upperhand,
+      myhand,
+      ophand,
       discardPile,
       meldPile,
       currentMeld
@@ -262,9 +315,8 @@ export default class Game extends Component {
   //setup the initial layout of the table
   dealing(data) {
     //data is from the server
-    console.log("dealing");
     //this is simply the animation, because the cards dealt is given by the server
-    const { cards, discardPile, deck, lowerhand, upperhand, meldPile } = this.state;
+    const { cards, discardPile, deck, myhand, ophand, meldPile } = this.state;
     $('#deal').hide();
 
     //adding cards that is in player's hand
@@ -274,7 +326,7 @@ export default class Game extends Component {
           return cardVal.suit == card.suit && cardVal.rank == card.rank
         }
         )
-      lowerhand.addCard(cardToAdd);
+      myhand.addCard(cardToAdd);
     }
 
     //adding cards in the discard pile
@@ -282,10 +334,15 @@ export default class Game extends Component {
       discardPile.addCard(cards.all.find((cardVal, cardInd) => cardVal.suit == card.suit && cardVal.rank == card.rank));
     }
 
-    //dealing random cards to upperhand, don't care what they are
-    //the deck and upperhand has a random permutation of cards
-    //the player only knows what is in his hand and not in the deck or in upperhand
-    deck.deal(data.opcards, [upperhand], 100);
+    //dealing random cards to ophand, don't care what they are
+    //the deck and ophand has a random permutation of cards
+    //the player only knows what is in his hand and not in the deck or in ophand
+    // deck.deal(data.opcards, [ophand], 100);
+
+    //new idea: fill ophand with fake cards
+    for (let i = 0; i < data.opcards; i++){
+      ophand.addCard(cards.getFakeCards());
+    }
 
     //adding melds
     for (let meld of data.melds) {
@@ -324,24 +381,24 @@ export default class Game extends Component {
     //now, render everything
     deck.render();
     discardPile.render();
-    lowerhand.render();
-    upperhand.render();
+    myhand.render();
+    ophand.render();
 
     //allow drawing cards
-    this.setGameState("isDrawing", null, () => this.draw());
+    this.setGameState("isDrawing", null);
   }
 
   handleLayoff() {
-    let { isLayingoff, currentMeld, lowerhand, currentSelectedCardHand, currentSelectedMeld } = this.state;
+    let { isLayingoff, currentMeld, myhand, currentSelectedCardHand, currentSelectedMeld } = this.state;
     if (isLayingoff) {
       //reuse currentMeld to store the laying off card
       //in this usage, currentMeld should have only 1 card
       if (currentMeld.length === 0) {
         //no card yet
         currentMeld.addCard(currentSelectedCardHand);
-        lowerhand.removeCard(currentSelectedCardHand);
+        myhand.removeCard(currentSelectedCardHand);
         currentMeld.sort();
-        lowerhand.render();
+        myhand.render();
         currentMeld.render();
       } else if (currentMeld.length === 1) {
         if (currentSelectedMeld != null) {
@@ -358,7 +415,7 @@ export default class Game extends Component {
             currentSelectedMeld.render();
             currentMeld.render();
 
-            this.setState({ currentSelectedCardHand: null, currentSelectedMeld: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with lowerhand.click event
+            this.setState({ currentSelectedCardHand: null, currentSelectedMeld: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
           }
           else alert("Cannot layoff this card into this meld");
 
@@ -370,22 +427,22 @@ export default class Game extends Component {
   handleMeld() {
 
     let validMeld = false;
-    let { cards, lowerhand, currentMeld, meldPile } = this.state;
+    let { cards, myhand, currentMeld, meldPile } = this.state;
     let card = this.state.currentSelectedCardHand;
 
     //if there are less then 3 cards, just add them to currentMeld
     if (currentMeld.length < 2) {
       currentMeld.addCard(card);
-      lowerhand.removeCard(card);
+      myhand.removeCard(card);
       currentMeld.sort();
-      lowerhand.render();
+      myhand.render();
       currentMeld.render();
     }
     else if (currentMeld.length == 2) {
       //currentMeld has 2 cards already, adding a third will perform a check
       //if check is valid, add cards to the meld pile
       currentMeld.addCard(card);
-      lowerhand.removeCard(card);
+      myhand.removeCard(card);
       currentMeld.sort();
       //three in a row, same suit
       if (currentMeld[0].suit == currentMeld[1].suit && currentMeld[1].suit == currentMeld[2].suit) {
@@ -425,13 +482,13 @@ export default class Game extends Component {
         newMeld.resize("small");
         newMeld.render();
         currentMeld.render();
-        this.setState({ currentSelectedCardHand: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with lowerhand.click event
+        this.setState({ currentSelectedCardHand: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
 
       }
       else {
         alert("meld not valid");
       }
-      lowerhand.render();
+      myhand.render();
       currentMeld.render();
     }
   }

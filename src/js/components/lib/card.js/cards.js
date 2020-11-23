@@ -35,6 +35,9 @@ var cards = function() {
     }
   }
 
+  function getFakeCards() {
+    return new Card('bj', 0, opt.table);
+  }
   function init(options) {
     if (options) {
       for (var i in options) {
@@ -419,6 +422,7 @@ var cards = function() {
   return {
     init: init,
     all: all,
+    getFakeCards: getFakeCards,
     options: opt,
     SIZE: opt.cardSize,
     Card: Card,
