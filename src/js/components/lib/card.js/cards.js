@@ -66,9 +66,9 @@ var cards = function() {
     if (opt.redJoker) {
       all.push(new Card('rj', 0, opt.table));
     }
-
+    
     $('.card').on("click", mouseEvent);
-    // shuffle(all);
+    shuffle(all);
   }
 
   function shuffle(deck) {

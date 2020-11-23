@@ -217,16 +217,6 @@ export default class Game extends Component {
     //this holds the 3 cards that user want to meld
     //set it to slightly overlap the deck
     var currentMeld = new cards.Hand({ faceUp: true, x: deck.x + 20, y: deck.y + 20 });
-    //saving state
-    this.setState({
-      cards,
-      deck,
-      lowerhand,
-      upperhand,
-      discardPile,
-      meldPile,
-      currentMeld
-    });
 
     //setup click event, these will simply set the clicked card into state and call relevant event handler
     let self = this;
@@ -253,6 +243,17 @@ export default class Game extends Component {
         self.setState({ currentSelectedCardDiscard: card }, () => self.draw());
     });
 
+    //saving state
+    this.setState({
+      cards,
+      deck,
+      lowerhand,
+      upperhand,
+      discardPile,
+      meldPile,
+      currentMeld
+    });
+
     //setup websocket connection and handle it
     this.joinGameWithCode("12131313");
 
@@ -260,18 +261,11 @@ export default class Game extends Component {
 
   //setup the initial layout of the table
   dealing(data) {
+    //data is from the server
     console.log("dealing");
     //this is simply the animation, because the cards dealt is given by the server
     const { cards, discardPile, deck, lowerhand, upperhand, meldPile } = this.state;
     $('#deal').hide();
-    // cards.shuffle(deck);
-    // deck.deal(1, [upperhand, lowerhand], 50, function () {
-    // deck.deal(10, [lowerhand, upperhand], 50, function () {
-    //   //This is a callback function, called when the dealing
-    //   //is done.
-    //   discardPile.addCard(deck.topCard());
-    //   discardPile.render();
-    // });
 
     //adding cards that is in player's hand
     for (let card of data.cards) {
@@ -288,16 +282,10 @@ export default class Game extends Component {
       discardPile.addCard(cards.all.find((cardVal, cardInd) => cardVal.suit == card.suit && cardVal.rank == card.rank));
     }
 
-    //adding fake cards to the opponent's hand
-    for (let i = 0; i < data.opcards; i++) {
-      //just add the first card, this is a dummy card, the player doesn't know what cards the opponent has
-      upperhand.addCard(cards.all[0]);
-    }
-
-    //adding fake cards to the deck
-    for (let i = 0; i < data.deck; i++) {
-      deck.addCard(cards.all[0]);
-    }
+    //dealing random cards to upperhand, don't care what they are
+    //the deck and upperhand has a random permutation of cards
+    //the player only knows what is in his hand and not in the deck or in upperhand
+    deck.deal(data.opcards, [upperhand], 100);
 
     //adding melds
     for (let meld of data.melds) {
@@ -331,8 +319,6 @@ export default class Game extends Component {
 
       meldPile.push(newMeld);
       newMeld.resize("small");
-
-
       newMeld.render();
     }
     //now, render everything
@@ -343,7 +329,6 @@ export default class Game extends Component {
 
     //allow drawing cards
     this.setGameState("isDrawing", null, () => this.draw());
-
   }
 
   handleLayoff() {
@@ -452,7 +437,6 @@ export default class Game extends Component {
   }
 
   render() {
-    console.log("rendering");
     const { hasGameStarted } = this.props;
     const { isMelding, hasDiscarded, hasDrawn, isWaiting, isLayingoff } = this.state;
     const disableMeldLayoffButton = () => {
