@@ -13,10 +13,9 @@ function gameHandler(message){
     this.dealing(data);
   } else if (data.cmd == "draw") {
     this.draw(data);
-
-  } else if (data.cmd == "click") {
-
   } else if (data.cmd == "discard") {
+    this.discard(data);
+  } else if (data.cmd == "click") {
 
   } else if (data.cmd == "newmeld") {
 

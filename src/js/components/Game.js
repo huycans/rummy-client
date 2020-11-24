@@ -110,16 +110,31 @@ export default class Game extends Component {
     }
   }
 
-  discard() {
-    let { currentSelectedCardHand, isDiscarding, myhand, discardPile } = this.state;
-    if (isDiscarding) {
-      myhand.removeCard(currentSelectedCardHand);
-      discardPile.addCard(currentSelectedCardHand);
-      discardPile.render();
-      myhand.render();
+  discard(data) {
+    let { currentSelectedCardHand, isDiscarding, myhand, discardPile, ophand, deck } = this.state;
+    let self = this;
+    let cardToDiscard = data.card;
+
+    //if i am discarding the card
+    if (data.player == "me") {
+
+      discardPile.addCard(myhand.find((cardVal) => cardVal.suit == cardToDiscard.suit && cardVal.rank == cardToDiscard.rank));
+      // myhand.removeCard(myhand.find((cardVal) => cardVal.suit == cardToDiscard.suit && cardVal.rank == cardToDiscard.rank));
       this.setGameState("isWaiting", { hasDiscarded: true, currentSelectedCardHand: null });
-      // this.setState({ hasDiscarded: true, currentSelectedCardHand: null });
     }
+    else {
+      //the opponent is discarding a card
+      //replace the card from deck into ophand, render immediately
+      ophand.removeCard(ophand.topCard());
+      ophand.addCard(deck.find((cardVal) => cardVal.suit == cardToDiscard.suit && cardVal.rank == cardToDiscard.rank));
+      ophand.render({ immediate: true });
+      deck.render({ immediate: true });
+      //then place the card from ophand into discard pile, render
+      discardPile.addCard(ophand.topCard());
+    }
+    myhand.render();
+    ophand.render();
+    discardPile.render();
   }
 
   setGameState(stateToSet, addtionalStates = {}, callback) {
@@ -164,7 +179,9 @@ export default class Game extends Component {
       //the opponent is drawing a card
       if (data.from == "deck") {
         //if draw from deck
-        deck.push(cards.getFakeCards());
+        // deck.push(cards.getFakeCards());
+        deck.addCard(cards.getFakeCards());
+        deck.render({immediate: true});
         ophand.addCard(deck.topCard());
       } else {
         //if draw from discard pile
@@ -172,30 +189,10 @@ export default class Game extends Component {
       }
       
     }
+    deck.render();
     myhand.render();
     ophand.render();
     discardPile.render();
-
-      // if (currentSelectedCardDeck != null) {
-      //   //if draw from deck
-      //   myhand.addCard(deck.topCard());
-      //   myhand.render();
-
-      //   self.setGameState("isDiscarding", {
-      //     currentSelectedCardDeck: null,
-      //     currentSelectedCardDiscard: null,
-      //     hasDrawn: true
-      //   });
-      // } else if (currentSelectedCardDiscard != null) {
-      //   //if draw from discard pile
-      //   myhand.addCard(discardPile.topCard());
-      //   myhand.render();
-
-      //   self.setGameState("isDiscarding", {
-      //     currentSelectedCardDeck: null,
-      //     currentSelectedCardDiscard: null,
-      //     hasDrawn: true
-      //   });
 
   }
 
@@ -263,7 +260,13 @@ export default class Game extends Component {
         self.setState({ currentSelectedCardHand: card }, () => self.handleMeld());
       }
       if (self.state.isDiscarding) {
-        self.setState({ currentSelectedCardHand: card }, () => self.discard());
+        self.setState({ currentSelectedCardHand: card }, () => {
+          self.sendWSData({
+            cmd: "discard",
+            suit: card.suit,
+            rank: card.rank
+          })
+        });
       }
       if (self.state.isLayingoff) {
         self.setState({ currentSelectedCardHand: card }, () => self.handleLayoff());
