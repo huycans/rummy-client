@@ -33,7 +33,8 @@ export default class Game extends Component {
       //the game code to distinguish games, called lobby in server
       code: "",
       //randomly generated token from the server
-      token: ""
+      token: "",
+      hint: ""
     };
 
     this.handRef = React.createRef();
@@ -49,9 +50,12 @@ export default class Game extends Component {
     this.joinGameWithCode = this.joinGameWithCode.bind(this);
     this.sendWSData = this.sendWSData.bind(this);
     this.gameHandler = gameHandler.bind(this); 
-    this.moveMeldToPile = this.moveMeldToPile.bind(this); 
+    this.moveMeldToPile = this.moveMeldToPile.bind(this);
+    this.setHint = this.setHint.bind(this); 
   }
-
+  setHint(message){
+    this.setState({hint: message});
+  }
   componentDidMount() {
     let { websocket } = this.props;
     //setup websocket events
@@ -146,12 +150,33 @@ export default class Game extends Component {
   }
 
   setGameState(stateToSet, addtionalStates = {}, callback) {
+    let hint="";
+    switch (stateToSet) {
+      case "isMelding":
+        hint = "Please choose 3 cards that have the same rank but different suit, or same suit but in sequence."
+        break;
+      case "isLayingoff":
+        hint = "Please choose a card, then click on a preexisiting meld that you want to lay off to.";
+        break;
+      case "isWaiting":
+        hint = "Waiting for other player move.";
+        break;
+      case "isDrawing":
+        hint = "Please draw a card from the deck or the discard pile.";
+        break;
+      case "isDiscarding":
+        hint = "Please choose a card from your hand to discard or you can create a meld.";
+        break;
+      default:
+        break;
+    }
     this.setState({
       isMelding: stateToSet == "isMelding" ? true : false, //(pick 3 cards to meld)
       isLayingoff: stateToSet == "isLayingoff" ? true : false, //(add 1 card to 1 of the melds)
       isWaiting: stateToSet == "isWaiting" ? true : false, //(for server command, other player's turn...)
       isDrawing: stateToSet == "isDrawing" ? true : false, //(from deck or discard pile)
       isDiscarding: stateToSet == "isDiscarding" ? true : false, //(remove 1 card from hand to discard pile),
+      hint,
       ...addtionalStates
     }, callback);
   }
@@ -354,11 +379,6 @@ export default class Game extends Component {
       discardPile.addCard(cards.all.find((cardVal, cardInd) => cardVal.suit == card.suit && cardVal.rank == card.rank));
     }
 
-    //dealing random cards to ophand, don't care what they are
-    //the deck and ophand has a random permutation of cards
-    //the player only knows what is in his hand and not in the deck or in ophand
-    // deck.deal(data.opcards, [ophand], 100);
-
     //new idea: fill ophand with fake cards
     for (let i = 0; i < data.opcards; i++){
       ophand.addCard(cards.getFakeCards());
@@ -404,8 +424,16 @@ export default class Game extends Component {
     myhand.render();
     ophand.render();
 
-    //allow drawing cards
-    this.setGameState("isDrawing", null);
+    if (data.myturn){
+      //if it is my turn to draw
+      //allow drawing cards
+      this.setGameState("isDrawing");
+    }
+    else {
+      this.setGameState("isWaiting");
+
+    }
+
   }
 
   handleLayoff() {
@@ -536,7 +564,9 @@ export default class Game extends Component {
           newMeld.addCard(card);
           currentMeld.removeCard(card);
         }
-      }     
+      }    
+      this.setState({ currentSelectedCardHand: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
+
     }
     //the other player is doing the melding
     else if (data.player == "op") {
@@ -545,10 +575,8 @@ export default class Game extends Component {
       //remove 3 cards from ophand
       for (let i=0; i < meldToMove.length; i++){
         ophand.removeCard(ophand.topCard());
+        ophand.render({ immediate: true });
       }
-      //avoid rendering
-      ophand.render({ immediate: true });
-      deck.render({ immediate: true });
 
       //add cards from deck to ophand
       for (let i = 0; i < meldToMove.length; i++) {
@@ -581,12 +609,11 @@ export default class Game extends Component {
     newMeld.resize("small");
     newMeld.render();
     currentMeld.render();
-    this.setState({ currentSelectedCardHand: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
   }
 
   render() {
     const { hasGameStarted } = this.props;
-    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isLayingoff } = this.state;
+    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isLayingoff, hint } = this.state;
     const disableMeldLayoffButton = () => {
       if (isWaiting) {
         return true;
@@ -605,6 +632,9 @@ export default class Game extends Component {
     return (
       <div>
         <p>Welcome to the game</p>
+        <div id="hint">
+          {hint}
+        </div>
         <button id="start-btn" style={{ display: !hasGameStarted ? "inline" : "none" }}
           onClick={this.startGame}>Start the game</button>
         <div id="card-table">
