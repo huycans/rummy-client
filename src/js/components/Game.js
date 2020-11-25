@@ -48,7 +48,8 @@ export default class Game extends Component {
     this.setGameState = this.setGameState.bind(this);
     this.joinGameWithCode = this.joinGameWithCode.bind(this);
     this.sendWSData = this.sendWSData.bind(this);
-    this.gameHandler = gameHandler.bind(this);
+    this.gameHandler = gameHandler.bind(this); 
+    this.moveMeldToPile = this.moveMeldToPile.bind(this); 
   }
 
   componentDidMount() {
@@ -133,7 +134,9 @@ export default class Game extends Component {
       deck.render({ immediate: true });
       //then place the card from ophand into discard pile
       discardPile.addCard(ophand.topCard());
+
       //since the opponent is discarding, it is my turn
+      this.setGameState("isDrawing", {hasDiscarded: false, hasDrawn: false});
     }
     ophand.sort();
     myhand.render();
@@ -179,26 +182,35 @@ export default class Game extends Component {
           hasDrawn: true
         });
       }
+      deck.render();
+      myhand.render();
+      ophand.render();
+      discardPile.render();
     }
     else {
       //the opponent is drawing a card
       if (data.from == "deck") {
         //if draw from deck
-        // deck.push(cards.getFakeCards());
         deck.addCard(cards.getFakeCards());
         deck.render({immediate: true});
         ophand.addCard(deck.topCard());
+        deck.render();
+        myhand.render();
+        ophand.render();
+        discardPile.render();
       } else {
         //if draw from discard pile
         ophand.addCard(discardPile.topCard());
+        ophand.render();
+        discardPile.render();
+        //do this to make sure ophand contains only fake cards
+        deck.addCard(ophand.topCard());
+        ophand.addCard(cards.getFakeCards());
+        //invisible render
+        ophand.render({immediate: true});
+        deck.render({ immediate: true});
       }
-      
     }
-    deck.render();
-    myhand.render();
-    ophand.render();
-    discardPile.render();
-
   }
 
   cancelMeldOrLayoff() {
@@ -432,8 +444,8 @@ export default class Game extends Component {
     }
   }
 
+  //this function handles melding process client side only, it does not move cards into the meld pile
   handleMeld() {
-
     let validMeld = false;
     let { cards, myhand, currentMeld, meldPile } = this.state;
     let card = this.state.currentSelectedCardHand;
@@ -466,32 +478,14 @@ export default class Game extends Component {
         }
       }
       if (validMeld) {
-        //move the cards into meld pile, remove them from currentMeld
-        let newMeld = new cards.Hand({ faceUp: true, y: 1 });
-
-        const length = currentMeld.length;
-        for (let i = 0; i < length; i++) {
-          let card = currentMeld.pop();
-          newMeld.addCard(card);
-          currentMeld.removeCard(card);
-        }
-
-        newMeld.x = newMeld.x - 230;
-        newMeld.y = newMeld.y + (meldPile.length + 1) * 250 / 5;
-
-        let self = this;
-        newMeld.click(function (card) {
-          if (self.state.isLayingoff) {
-            self.setState({ currentSelectedMeld: newMeld }, () => self.handleLayoff());
-          }
-        });
-
-        meldPile.push(newMeld);
-        newMeld.resize("small");
-        newMeld.render();
-        currentMeld.render();
-        this.setState({ currentSelectedCardHand: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
-
+        //the meld is valid, send a cmd to meld to server
+        this.sendWSData({
+          cmd: "newmeld",
+          player: "me",
+          meld: currentMeld.map((card) => {
+            return {suit: card.suit, rank: card.rank}
+          })//array with 3 cards
+        })
       }
       else {
         alert("meld not valid");
@@ -499,6 +493,95 @@ export default class Game extends Component {
       myhand.render();
       currentMeld.render();
     }
+  }
+
+  moveMeldToPile(data){
+    let { cards, meldPile, currentMeld, myhand, ophand, deck} = this.state;
+    let meldToMove = data.meld;
+    let newMeld = new cards.Hand({ faceUp: true, y: 1 });
+
+    //i am doing the melding
+    if (data.player == 'me'){
+      let isCurrentMeldValid = true;
+      //make sure the meld that we are moving to the meld pile is the same as the meld the client has chosen
+      if (meldToMove.length === currentMeld.length ){
+        for (let i = 0; i < meldToMove.length; i++) {
+          if (!currentMeld.some((cardVal) => cardVal.rank == meldToMove[i].rank && cardVal.suit == meldToMove[i].suit)) {
+            //if a card in meldToMove not exist in currentMeld, then currentMeld is invalid
+            isCurrentMeldValid = false;
+            break;
+          }
+        }
+      } else {
+        isCurrentMeldValid = false;
+      }
+
+      //this should not happen, unless something weird happens with the server or the player cheated somehow
+      if (!isCurrentMeldValid){
+        //ignore currentMeld and use meldToMove instead
+        //cancel the currentMeld
+        this.cancelMeldOrLayoff();
+        //move cards from myhand to the meldPile
+        let length = meldToMove.length;
+        for (let i = 0; i < length; i++) {
+          let card = myhand.pop();
+          newMeld.addCard(card);
+          currentMeld.removeCard(card);
+        }
+      } else {
+        //the normal, expected flow
+        let length = meldToMove.length;
+        for (let i = 0; i < length; i++) {
+          let card = currentMeld.pop();
+          newMeld.addCard(card);
+          currentMeld.removeCard(card);
+        }
+      }     
+    }
+    //the other player is doing the melding
+    else if (data.player == "op") {
+      //assume that ophand has only fake cards, any card ophand drew is actually in deck
+
+      //remove 3 cards from ophand
+      for (let i=0; i < meldToMove.length; i++){
+        ophand.removeCard(ophand.topCard());
+      }
+      //avoid rendering
+      ophand.render({ immediate: true });
+      deck.render({ immediate: true });
+
+      //add cards from deck to ophand
+      for (let i = 0; i < meldToMove.length; i++) {
+        ophand.addCard(deck.find((cardVal) => cardVal.suit == meldToMove[i].suit && cardVal.rank == meldToMove[i].rank));
+      }
+      //avoid rendering
+      ophand.render({ immediate: true });
+      deck.render({ immediate: true });
+
+      //move cards from ophand to newMeld
+      for (let i = 0; i < meldToMove.length; i++) {
+        newMeld.addCard(ophand.topCard());
+      }
+    }
+    //sort the card without rendering
+    newMeld.sort();
+    newMeld.render({ immediate: true });
+
+    newMeld.x = newMeld.x - 230;
+    newMeld.y = newMeld.y + (meldPile.length + 1) * 250 / 5;
+
+    let self = this;
+    newMeld.click(function (card) {
+      if (self.state.isLayingoff) {
+        self.setState({ currentSelectedMeld: newMeld }, () => self.handleLayoff());
+      }
+    });
+
+    meldPile.push(newMeld);
+    newMeld.resize("small");
+    newMeld.render();
+    currentMeld.render();
+    this.setState({ currentSelectedCardHand: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
   }
 
   render() {

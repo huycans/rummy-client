@@ -15,11 +15,11 @@ function gameHandler(message){
     this.draw(data);
   } else if (data.cmd == "discard") {
     this.discard(data);
-  } else if (data.cmd == "click") {
-
   } else if (data.cmd == "newmeld") {
-
+    this.moveMeldToPile(data)
   } else if (data.cmd == "addmeld") {
+
+  } else if (data.cmd == "click") {
 
   } else if (data.cmd == "ping") {
 
