@@ -119,22 +119,27 @@ export default class Game extends Component {
     if (data.player == "me") {
 
       discardPile.addCard(myhand.find((cardVal) => cardVal.suit == cardToDiscard.suit && cardVal.rank == cardToDiscard.rank));
-      // myhand.removeCard(myhand.find((cardVal) => cardVal.suit == cardToDiscard.suit && cardVal.rank == cardToDiscard.rank));
+      myhand.removeCard(myhand.find((cardVal) => cardVal.suit == cardToDiscard.suit && cardVal.rank == cardToDiscard.rank));
+
       this.setGameState("isWaiting", { hasDiscarded: true, currentSelectedCardHand: null });
     }
     else {
       //the opponent is discarding a card
-      //replace the card from deck into ophand, render immediately
+      //remove the top fake card from ophand, then add the card to discard from deck to ophand
       ophand.removeCard(ophand.topCard());
       ophand.addCard(deck.find((cardVal) => cardVal.suit == cardToDiscard.suit && cardVal.rank == cardToDiscard.rank));
+
       ophand.render({ immediate: true });
       deck.render({ immediate: true });
-      //then place the card from ophand into discard pile, render
+      //then place the card from ophand into discard pile
       discardPile.addCard(ophand.topCard());
+      //since the opponent is discarding, it is my turn
     }
+    ophand.sort();
     myhand.render();
     ophand.render();
     discardPile.render();
+    deck.render();
   }
 
   setGameState(stateToSet, addtionalStates = {}, callback) {
