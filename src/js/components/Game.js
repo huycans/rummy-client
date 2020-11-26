@@ -12,7 +12,7 @@ export default class Game extends Component {
 
     this.state = {
       isMelding: false, //(pick 3 cards to meld)
-      isLayingoff: false, //(add 1 card to 1 of the melds)
+      isAddingToMeld: false, //(add 1 card to 1 of the melds)
       isWaiting: false, //(for server command, other player's turn...)
       isDrawing: false, //(from deck or discard pile)
       isDiscarding: false, //(remove 1 card from hand to discard pile),
@@ -40,8 +40,8 @@ export default class Game extends Component {
     this.handRef = React.createRef();
     this.startGame = this.startGame.bind(this);
     this.handleMeld = this.handleMeld.bind(this);
-    this.handleLayoff = this.handleLayoff.bind(this);
-    this.cancelMeldOrLayoff = this.cancelMeldOrLayoff.bind(this);
+    this.handleAddToMeld = this.handleAddToMeld.bind(this);
+    this.cancelMeldOrAddToMeld = this.cancelMeldOrAddToMeld.bind(this);
     this.dealing = this.dealing.bind(this);
     this.sortHand = this.sortHand.bind(this);
     this.draw = this.draw.bind(this);
@@ -155,7 +155,7 @@ export default class Game extends Component {
       case "isMelding":
         hint = "Please choose 3 cards that have the same rank but different suit, or same suit but in sequence."
         break;
-      case "isLayingoff":
+      case "isAddingToMeld":
         hint = "Please choose a card, then click on a preexisiting meld that you want to lay off to.";
         break;
       case "isWaiting":
@@ -172,7 +172,7 @@ export default class Game extends Component {
     }
     this.setState({
       isMelding: stateToSet == "isMelding" ? true : false, //(pick 3 cards to meld)
-      isLayingoff: stateToSet == "isLayingoff" ? true : false, //(add 1 card to 1 of the melds)
+      isAddingToMeld: stateToSet == "isAddingToMeld" ? true : false, //(add 1 card to 1 of the melds)
       isWaiting: stateToSet == "isWaiting" ? true : false, //(for server command, other player's turn...)
       isDrawing: stateToSet == "isDrawing" ? true : false, //(from deck or discard pile)
       isDiscarding: stateToSet == "isDiscarding" ? true : false, //(remove 1 card from hand to discard pile),
@@ -238,9 +238,9 @@ export default class Game extends Component {
     }
   }
 
-  cancelMeldOrLayoff() {
-    let { currentMeld, myhand, isMelding, isLayingoff } = this.state;
-    if (isMelding || isLayingoff) {
+  cancelMeldOrAddToMeld() {
+    let { currentMeld, myhand, isMelding, isAddingToMeld } = this.state;
+    if (isMelding || isAddingToMeld) {
       //return all cards from currentMeld to myhand
       const length = currentMeld.length;
       for (let i = 0; i < length; i++) {
@@ -267,7 +267,7 @@ export default class Game extends Component {
     }
     this.props.startingGame();
 
-    console.log("Stating game");
+    console.log("Starting game");
     let { cards } = this.state;
 
     //Create a new deck of cards
@@ -310,8 +310,8 @@ export default class Game extends Component {
           })
         });
       }
-      if (self.state.isLayingoff) {
-        self.setState({ currentSelectedCardHand: card }, () => self.handleLayoff());
+      if (self.state.isAddingToMeld) {
+        self.setState({ currentSelectedCardHand: card }, () => self.handleAddToMeld());
       }
     });
 
@@ -409,8 +409,8 @@ export default class Game extends Component {
 
       let self = this;
       newMeld.click(function (card) {
-        if (self.state.isLayingoff) {
-          self.setState({ currentSelectedMeld: newMeld }, () => self.handleLayoff());
+        if (self.state.isAddingToMeld) {
+          self.setState({ currentSelectedMeld: newMeld }, () => self.handleAddToMeld());
         }
       });
 
@@ -436,9 +436,9 @@ export default class Game extends Component {
 
   }
 
-  handleLayoff() {
-    let { isLayingoff, currentMeld, myhand, currentSelectedCardHand, currentSelectedMeld } = this.state;
-    if (isLayingoff) {
+  handleAddToMeld() {
+    let { isAddingToMeld, currentMeld, myhand, currentSelectedCardHand, currentSelectedMeld } = this.state;
+    if (isAddingToMeld) {
       //reuse currentMeld to store the laying off card
       //in this usage, currentMeld should have only 1 card
       if (currentMeld.length === 0) {
@@ -451,21 +451,21 @@ export default class Game extends Component {
       } else if (currentMeld.length === 1) {
         if (currentSelectedMeld != null) {
           let card = currentMeld[0];//the only card inside currentMeld
-          //check if layoff card is valid for currentSelectedMeld
+          //check if card to add to meld is valid for currentSelectedMeld
           if ((currentSelectedMeld[0].suit === card.suit && currentSelectedMeld[0].rank - 1 === card.rank)
             || (currentSelectedMeld[currentSelectedMeld.length - 1].suit === card.suit && currentSelectedMeld[currentSelectedMeld.length - 1].rank + 1 === card.rank)
           ) {
             //if the card is same suit and less than 1 from the first card in meld, or greater than 1 from the last card in meld
-            let cardToLayoff = currentMeld.pop();
-            currentSelectedMeld.addCard(cardToLayoff);
-            currentMeld.removeCard(cardToLayoff);
+            let cardToAddToMeld = currentMeld.pop();
+            currentSelectedMeld.addCard(cardToAddToMeld);
+            currentMeld.removeCard(cardToAddToMeld);
             currentSelectedMeld.resize("small");
             currentSelectedMeld.render();
             currentMeld.render();
 
             this.setState({ currentSelectedCardHand: null, currentSelectedMeld: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
           }
-          else alert("Cannot layoff this card into this meld");
+          else alert("Cannot add this card into this meld");
 
         }
       }
@@ -548,7 +548,7 @@ export default class Game extends Component {
       if (!isCurrentMeldValid){
         //ignore currentMeld and use meldToMove instead
         //cancel the currentMeld
-        this.cancelMeldOrLayoff();
+        this.cancelMeldOrAddToMeld();
         //move cards from myhand to the meldPile
         let length = meldToMove.length;
         for (let i = 0; i < length; i++) {
@@ -600,8 +600,8 @@ export default class Game extends Component {
 
     let self = this;
     newMeld.click(function (card) {
-      if (self.state.isLayingoff) {
-        self.setState({ currentSelectedMeld: newMeld }, () => self.handleLayoff());
+      if (self.state.isAddingToMeld) {
+        self.setState({ currentSelectedMeld: newMeld }, () => self.handleAddToMeld());
       }
     });
 
@@ -613,12 +613,12 @@ export default class Game extends Component {
 
   render() {
     const { hasGameStarted } = this.props;
-    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isLayingoff, hint } = this.state;
-    const disableMeldLayoffButton = () => {
+    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isAddingToMeld, hint } = this.state;
+    const disableAddToMeldButton = () => {
       if (isWaiting) {
         return true;
-      } else if (isMelding || isLayingoff) {
-        //or melding/layoff is in progress
+      } else if (isMelding || isAddingToMeld) {
+        //or melding/AddToMeld is in progress
         return true;
       }
       else if (hasDrawn && !hasDiscarded) {
@@ -641,18 +641,18 @@ export default class Game extends Component {
           <button style={{ display: hasGameStarted ? "block" : "none" }}
             id="deal" onClick={this.dealing}>DEAL</button>
 
-          <button disabled={disableMeldLayoffButton()} style={{ display: hasGameStarted ? "block" : "none" }}
+          <button disabled={disableAddToMeldButton()} style={{ display: hasGameStarted ? "block" : "none" }}
             id="meld"
             onClick={() => this.setGameState("isMelding")}
           >Meld</button>
 
-          <button disabled={disableMeldLayoffButton()} style={{ display: hasGameStarted ? "block" : "none" }}
-            id="layoff"
-            onClick={() => this.setGameState("isLayingoff")}
-          >Layoff</button>
+          <button disabled={disableAddToMeldButton()} style={{ display: hasGameStarted ? "block" : "none" }}
+            id="addtomeld"
+            onClick={() => this.setGameState("isAddingToMeld")}
+          >Add to meld</button>
 
-          <button style={{ display: hasGameStarted & (isMelding || isLayingoff) ? "block" : "none" }}
-            id="cancel-meld" onClick={this.cancelMeldOrLayoff}
+          <button style={{ display: hasGameStarted & (isMelding || isAddingToMeld) ? "block" : "none" }}
+            id="cancel-meld" onClick={this.cancelMeldOrAddToMeld}
           >Cancel</button>
 
           <button style={{ display: hasGameStarted ? "block" : "none" }}
