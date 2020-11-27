@@ -439,9 +439,10 @@ export default class Game extends Component {
   //server has accepted the request to add card to meld, now move the card to meld
   moveCardToMeld(data) {
     let cardToMoveToMeld = data.card;
-    let { currentMeld, currentSelectedMeld, myhand, ophand, deck } = this.state;
+    let { currentMeld, myhand, ophand, deck, meldPile } = this.state;
     //i am doing the adding
     if (data.player == 'me') {
+      let { currentSelectedMeld } = this.state;
       //make sure the card that server says to add is the same that the client request to add
       if (cardToMoveToMeld.rank == currentMeld[0].rank && cardToMoveToMeld.suit == currentMeld[0].suit) {
         // let cardToAddToMeld = currentMeld.pop();
@@ -459,7 +460,12 @@ export default class Game extends Component {
         // myhand.removeCard(card);
       }
       this.setState({ currentSelectedCardHand: null, currentSelectedMeld: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
-
+      currentSelectedMeld.sort();
+      currentSelectedMeld.resize("small");
+      currentSelectedMeld.render();
+      currentMeld.render();
+      ophand.render();
+      myhand.render();
     }
     else {
       //the opponent is doing the adding
@@ -471,22 +477,23 @@ export default class Game extends Component {
       ophand.removeCard(ophand.topCard());
       ophand.render({ immediate: true });
       
-      ophand.addCard();
+      ophand.addCard(card);
       //avoid rendering
       ophand.render({ immediate: true });
       deck.render({ immediate: true });
 
+      let meldToAdd = meldPile[data.meldId];
       //move cards from ophand to currentSelectedMeld
-      currentSelectedMeld.addCard(card);
-      ophand.removeCard(card);
+      meldToAdd.addCard(ophand.topCard());
+      // ophand.removeCard(card);
 
+      //render
+      meldToAdd.sort();
+      meldToAdd.resize("small");
+      meldToAdd.render();
+      ophand.render();
     }
-    currentSelectedMeld.sort();
-    currentSelectedMeld.resize("small");
-    currentSelectedMeld.render();
-    currentMeld.render();
-    ophand.render();
-    myhand.render();
+
 
   }
 
