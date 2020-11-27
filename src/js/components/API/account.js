@@ -70,4 +70,26 @@ async function signup(username, password) {
   }
 }
 
-export { signin, signup }
+async function checkSession(sessionToken) {
+  try {
+    let response = await fetch(SERVER_URL + SERVER_API.TOKENCHECK, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "Access-Control-Allow-Origin": "*",
+        Authorization: "Bearer " + sessionToken
+      }
+    });
+    let responseJSON = await response.json();
+    if (responseJSON.success == false && responseJSON.status == "JWT invalid") {
+      return false;
+    } else {
+      return true;
+    }
+  } catch (error) {
+    throw error;
+  }
+}
+
+export { signin, signup, checkSession }

@@ -53,9 +53,11 @@ export default class Game extends Component {
     this.moveMeldToPile = this.moveMeldToPile.bind(this);
     this.setHint = this.setHint.bind(this);
   }
+
   setHint(message) {
     this.setState({ hint: message });
   }
+
   componentDidMount() {
     let { websocket } = this.props;
     //setup websocket events
@@ -82,22 +84,23 @@ export default class Game extends Component {
 
   //used to send data to the server, as string
   sendWSData(data) {
-    let { websocket } = this.props;
+    let { websocket, userToken } = this.props;
     // console.log("WEBSOCKET", websocket);
     const { code, token } = this.state;
     //always includes token and game code when sending data
     data.lobby = code;
     data.token = token;
+    data.userToken = userToken;
     // Send Data (as string)
     websocket.send(JSON.stringify(data));
   }
 
   //setup websocket connection to the server
-  async joinGameWithCode(code = "12345678979") {
+  async joinGameWithCode(code = "12345678979", userToken) {
     try {
 
       //request to join a game with code typed in by user
-      let joinResponse = await requestJoin(code);
+      let joinResponse = await requestJoin(code, userToken);
 
       let token = joinResponse.token;
       console.log(token);
@@ -354,7 +357,7 @@ export default class Game extends Component {
     });
 
     //setup websocket connection and handle it
-    this.joinGameWithCode("12131313");
+    this.joinGameWithCode("12131313", this.props.userToken);
 
   }
 
