@@ -131,6 +131,7 @@ export default class Game extends Component {
     else {
       //the opponent is discarding a card
       //remove the top fake card from ophand, then add the card to discard from deck to ophand
+      $(ophand.topCard().el).hide()
       ophand.removeCard(ophand.topCard());
       ophand.addCard(deck.find((cardVal) => cardVal.suit == cardToDiscard.suit && cardVal.rank == cardToDiscard.rank));
 
@@ -637,6 +638,7 @@ export default class Game extends Component {
 
       //remove 3 cards from ophand
       for (let i = 0; i < meldToMove.length; i++) {
+        $(ophand.topCard().el).hide()
         ophand.removeCard(ophand.topCard());
         ophand.render({ immediate: true });
       }
