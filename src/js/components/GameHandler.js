@@ -18,7 +18,7 @@ function gameHandler(message){
   } else if (data.cmd == "newmeld") {
     this.moveMeldToPile(data)
   } else if (data.cmd == "addmeld") {
-
+    this.moveCardToMeld(data);
   } else if (data.cmd == "click") {
 
   } else if (data.cmd == "ping") {

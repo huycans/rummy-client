@@ -49,12 +49,12 @@ export default class Game extends Component {
     this.setGameState = this.setGameState.bind(this);
     this.joinGameWithCode = this.joinGameWithCode.bind(this);
     this.sendWSData = this.sendWSData.bind(this);
-    this.gameHandler = gameHandler.bind(this); 
+    this.gameHandler = gameHandler.bind(this);
     this.moveMeldToPile = this.moveMeldToPile.bind(this);
-    this.setHint = this.setHint.bind(this); 
+    this.setHint = this.setHint.bind(this);
   }
-  setHint(message){
-    this.setState({hint: message});
+  setHint(message) {
+    this.setState({ hint: message });
   }
   componentDidMount() {
     let { websocket } = this.props;
@@ -140,7 +140,7 @@ export default class Game extends Component {
       discardPile.addCard(ophand.topCard());
 
       //since the opponent is discarding, it is my turn
-      this.setGameState("isDrawing", {hasDiscarded: false, hasDrawn: false});
+      this.setGameState("isDrawing", { hasDiscarded: false, hasDrawn: false });
     }
     ophand.sort();
     myhand.render();
@@ -150,10 +150,10 @@ export default class Game extends Component {
   }
 
   setGameState(stateToSet, addtionalStates = {}, callback) {
-    let hint="";
+    let hint = "";
     switch (stateToSet) {
       case "isMelding":
-        hint = "Please choose 3 cards that have the same rank but different suit, or same suit but in sequence."
+        hint = "Please choose 3 cards that have the same rank but different suit, or same suit but in sequence.";
         break;
       case "isAddingToMeld":
         hint = "Please choose a card, then click on a preexisiting meld that you want to lay off to.";
@@ -190,7 +190,7 @@ export default class Game extends Component {
       let cardToDraw = data.card;
       if (data.from == "deck") {
         //if draw from deck
-        myhand.addCard(deck.find((cardVal) => cardVal.suit == cardToDraw.suit && cardVal.rank == cardToDraw.rank ));
+        myhand.addCard(deck.find((cardVal) => cardVal.suit == cardToDraw.suit && cardVal.rank == cardToDraw.rank));
 
         self.setGameState("isDiscarding", {
           currentSelectedCardDeck: null,
@@ -217,7 +217,7 @@ export default class Game extends Component {
       if (data.from == "deck") {
         //if draw from deck
         deck.addCard(cards.getFakeCards());
-        deck.render({immediate: true});
+        deck.render({ immediate: true });
         ophand.addCard(deck.topCard());
         deck.render();
         myhand.render();
@@ -232,8 +232,8 @@ export default class Game extends Component {
         deck.addCard(ophand.topCard());
         ophand.addCard(cards.getFakeCards());
         //invisible render
-        ophand.render({immediate: true});
-        deck.render({ immediate: true});
+        ophand.render({ immediate: true });
+        deck.render({ immediate: true });
       }
     }
   }
@@ -283,7 +283,7 @@ export default class Game extends Component {
 
     //Now lets create a couple of hands, one face down, one face up.
     var myhand = new cards.Hand({ faceUp: true, y: 340 });
-    var ophand = new cards.Hand({ faceUp: false, y: 60 });
+    var ophand = new cards.Hand({ faceUp: true, y: 60 });
 
     //Lets add a discard pile
     var discardPile = new cards.Deck({ faceUp: true });
@@ -307,7 +307,7 @@ export default class Game extends Component {
             cmd: "discard",
             suit: card.suit,
             rank: card.rank
-          })
+          });
         });
       }
       if (self.state.isAddingToMeld) {
@@ -321,7 +321,7 @@ export default class Game extends Component {
           self.sendWSData({
             cmd: "draw",
             from: "deck"
-          })
+          });
 
           //this should be called when receiving command
           // self.draw();
@@ -335,9 +335,9 @@ export default class Game extends Component {
           self.sendWSData({
             cmd: "draw",
             from: "discardPile",
-            rank: card.rank, 
+            rank: card.rank,
             suit: card.suit
-          })
+          });
         });
     });
 
@@ -368,9 +368,9 @@ export default class Game extends Component {
     for (let card of data.cards) {
       let cardToAdd = cards.all.find(
         (cardVal, cardInd) => {
-          return cardVal.suit == card.suit && cardVal.rank == card.rank
+          return cardVal.suit == card.suit && cardVal.rank == card.rank;
         }
-        )
+      );
       myhand.addCard(cardToAdd);
     }
 
@@ -380,7 +380,7 @@ export default class Game extends Component {
     }
 
     //new idea: fill ophand with fake cards
-    for (let i = 0; i < data.opcards; i++){
+    for (let i = 0; i < data.opcards; i++) {
       ophand.addCard(cards.getFakeCards());
     }
 
@@ -391,7 +391,7 @@ export default class Game extends Component {
       for (let card of meld) {
         let cardToAdd = cards.all.find(
           (cardVal, cardInd) => {
-            return cardVal.suit == card.suit && cardVal.rank == card.rank
+            return cardVal.suit == card.suit && cardVal.rank == card.rank;
           });
         meldArr.push(cardToAdd);
       }
@@ -424,7 +424,7 @@ export default class Game extends Component {
     myhand.render();
     ophand.render();
 
-    if (data.myturn){
+    if (data.myturn) {
       //if it is my turn to draw
       //allow drawing cards
       this.setGameState("isDrawing");
@@ -436,10 +436,65 @@ export default class Game extends Component {
 
   }
 
+  //server has accepted the request to add card to meld, now move the card to meld
+  moveCardToMeld(data) {
+    let cardToMoveToMeld = data.card;
+    let { currentMeld, currentSelectedMeld, myhand, ophand, deck } = this.state;
+    //i am doing the adding
+    if (data.player == 'me') {
+      //make sure the card that server says to add is the same that the client request to add
+      if (cardToMoveToMeld.rank == currentMeld[0].rank && cardToMoveToMeld.suit == currentMeld[0].suit) {
+        // let cardToAddToMeld = currentMeld.pop();
+        currentSelectedMeld.addCard(currentMeld.topCard());
+        // currentMeld.removeCard(cardToAddToMeld);
+      } else {
+        //for some reason, the client card and server's card is not the same, ignore client card
+
+        this.cancelMeldOrAddToMeld();
+        //move cards from myhand to the meld that needs adding
+
+        //the card in local game
+        let card = myhand.find((cardVal) => cardVal.rank == cardToMoveToMeld.rank && cardVal.rank == cardToMoveToMeld.rank);
+        currentSelectedMeld.addCard(card);
+        // myhand.removeCard(card);
+      }
+      this.setState({ currentSelectedCardHand: null, currentSelectedMeld: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
+
+    }
+    else {
+      //the opponent is doing the adding
+      //assume that ophand has only fake cards, any card ophand drew is actually in deck
+
+      //the card in local game
+      let card = deck.find((cardVal) => cardVal.suit == cardToMoveToMeld.suit && cardVal.rank == cardToMoveToMeld.rank);
+
+      ophand.removeCard(ophand.topCard());
+      ophand.render({ immediate: true });
+      
+      ophand.addCard();
+      //avoid rendering
+      ophand.render({ immediate: true });
+      deck.render({ immediate: true });
+
+      //move cards from ophand to currentSelectedMeld
+      currentSelectedMeld.addCard(card);
+      ophand.removeCard(card);
+
+    }
+    currentSelectedMeld.sort();
+    currentSelectedMeld.resize("small");
+    currentSelectedMeld.render();
+    currentMeld.render();
+    ophand.render();
+    myhand.render();
+
+  }
+
+  //handle add a card to meld on client side, if the card is valid then it is sent to server
   handleAddToMeld() {
     let { isAddingToMeld, currentMeld, myhand, currentSelectedCardHand, currentSelectedMeld } = this.state;
     if (isAddingToMeld) {
-      //reuse currentMeld to store the laying off card
+      //reuse currentMeld to store the card to add
       //in this usage, currentMeld should have only 1 card
       if (currentMeld.length === 0) {
         //no card yet
@@ -452,18 +507,18 @@ export default class Game extends Component {
         if (currentSelectedMeld != null) {
           let card = currentMeld[0];//the only card inside currentMeld
           //check if card to add to meld is valid for currentSelectedMeld
-          if ((currentSelectedMeld[0].suit === card.suit && currentSelectedMeld[0].rank - 1 === card.rank)
-            || (currentSelectedMeld[currentSelectedMeld.length - 1].suit === card.suit && currentSelectedMeld[currentSelectedMeld.length - 1].rank + 1 === card.rank)
+          if ((currentSelectedMeld[0].suit === card.suit && currentSelectedMeld[0].rank + 1 === card.rank)
+            || (currentSelectedMeld[currentSelectedMeld.length - 1].suit === card.suit && currentSelectedMeld[currentSelectedMeld.length - 1].rank - 1 === card.rank)
           ) {
             //if the card is same suit and less than 1 from the first card in meld, or greater than 1 from the last card in meld
-            let cardToAddToMeld = currentMeld.pop();
-            currentSelectedMeld.addCard(cardToAddToMeld);
-            currentMeld.removeCard(cardToAddToMeld);
-            currentSelectedMeld.resize("small");
-            currentSelectedMeld.render();
-            currentMeld.render();
-
-            this.setState({ currentSelectedCardHand: null, currentSelectedMeld: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
+            this.sendWSData({
+              cmd: "addmeld",
+              card: {
+                suit: card.suit,
+                rank: card.rank
+              },
+              meldId: currentSelectedMeld.id
+            });
           }
           else alert("Cannot add this card into this meld");
 
@@ -511,9 +566,9 @@ export default class Game extends Component {
           cmd: "newmeld",
           player: "me",
           meld: currentMeld.map((card) => {
-            return {suit: card.suit, rank: card.rank}
+            return { suit: card.suit, rank: card.rank };
           })//array with 3 cards
-        })
+        });
       }
       else {
         alert("meld not valid");
@@ -523,16 +578,16 @@ export default class Game extends Component {
     }
   }
 
-  moveMeldToPile(data){
-    let { cards, meldPile, currentMeld, myhand, ophand, deck} = this.state;
-    let meldToMove = data.meld;
+  moveMeldToPile(data) {
+    let { cards, meldPile, currentMeld, myhand, ophand, deck } = this.state;
+    let meldToMove = data.meld; //this is the meld given by server; currentMeld is the local meld
     let newMeld = new cards.Hand({ faceUp: true, y: 1 });
 
     //i am doing the melding
-    if (data.player == 'me'){
+    if (data.player == 'me') {
       let isCurrentMeldValid = true;
       //make sure the meld that we are moving to the meld pile is the same as the meld the client has chosen
-      if (meldToMove.length === currentMeld.length ){
+      if (meldToMove.length === currentMeld.length) {
         for (let i = 0; i < meldToMove.length; i++) {
           if (!currentMeld.some((cardVal) => cardVal.rank == meldToMove[i].rank && cardVal.suit == meldToMove[i].suit)) {
             //if a card in meldToMove not exist in currentMeld, then currentMeld is invalid
@@ -545,7 +600,7 @@ export default class Game extends Component {
       }
 
       //this should not happen, unless something weird happens with the server or the player cheated somehow
-      if (!isCurrentMeldValid){
+      if (!isCurrentMeldValid) {
         //ignore currentMeld and use meldToMove instead
         //cancel the currentMeld
         this.cancelMeldOrAddToMeld();
@@ -563,8 +618,9 @@ export default class Game extends Component {
           let card = currentMeld.pop();
           newMeld.addCard(card);
           currentMeld.removeCard(card);
+          //add id of the meld to newMeld, this is useful when adding a card to a meld
         }
-      }    
+      }
       this.setState({ currentSelectedCardHand: null }, () => setTimeout(() => this.setGameState("isDiscarding"), 500));//avoid race condition with myhand.click event
 
     }
@@ -573,7 +629,7 @@ export default class Game extends Component {
       //assume that ophand has only fake cards, any card ophand drew is actually in deck
 
       //remove 3 cards from ophand
-      for (let i=0; i < meldToMove.length; i++){
+      for (let i = 0; i < meldToMove.length; i++) {
         ophand.removeCard(ophand.topCard());
         ophand.render({ immediate: true });
       }
@@ -599,6 +655,7 @@ export default class Game extends Component {
     newMeld.y = newMeld.y + (meldPile.length + 1) * 250 / 5;
 
     let self = this;
+    newMeld.id = data.meldId;
     newMeld.click(function (card) {
       if (self.state.isAddingToMeld) {
         self.setState({ currentSelectedMeld: newMeld }, () => self.handleAddToMeld());
