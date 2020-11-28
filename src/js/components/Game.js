@@ -536,6 +536,9 @@ export default class Game extends Component {
           //check if card to add to meld is valid for currentSelectedMeld
           if ((currentSelectedMeld[0].suit === card.suit && currentSelectedMeld[0].rank - 1 === card.rank)
             || (currentSelectedMeld[currentSelectedMeld.length - 1].suit === card.suit && currentSelectedMeld[currentSelectedMeld.length - 1].rank + 1 === card.rank)
+            || (currentSelectedMeld[0].suit != card.suit && currentSelectedMeld[0].rank == card.rank 
+            && currentSelectedMeld[1].rank == card.rank
+            && currentSelectedMeld[2].rank == card.rank)
           ) {
             //if the card is same suit and less than 1 from the first card in meld, or greater than 1 from the last card in meld
             this.sendWSData({
