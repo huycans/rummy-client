@@ -383,7 +383,7 @@ export default class Game extends Component {
       discardPile.addCard(cards.all.find((cardVal, cardInd) => cardVal.suit == card.suit && cardVal.rank == card.rank));
     }
 
-    //new idea: fill ophand with fake cards
+    //fill ophand with fake cards
     for (let i = 0; i < data.opcards; i++) {
       ophand.addCard(cards.getFakeCards());
     }
@@ -407,7 +407,7 @@ export default class Game extends Component {
         let card = meldArr.pop();
         newMeld.addCard(card);
       }
-
+      newMeld.sort();
       newMeld.x = newMeld.x - 230;
       newMeld.y = newMeld.y + (meldPile.length + 1) * 250 / 5;
 
@@ -429,15 +429,17 @@ export default class Game extends Component {
     ophand.render();
 
     if (data.myturn) {
-      //if it is my turn to draw
-      //allow drawing cards
-      this.setGameState("isDrawing");
+      //if it is my turn
+      if (data.drawPhase) {
+        //drawing stage
+        this.setGameState("isDrawing");
+      } else {
+        this.setGameState("isDiscarding", { hasDrawn: true });
+      }
     }
     else {
       this.setGameState("isWaiting");
-
     }
-
   }
 
   //server has accepted the request to add card to meld, now move the card to meld
@@ -497,8 +499,6 @@ export default class Game extends Component {
       meldToAdd.render();
       ophand.render();
     }
-
-
   }
 
   //handle add a card to meld on client side, if the card is valid then it is sent to server
@@ -518,8 +518,8 @@ export default class Game extends Component {
         if (currentSelectedMeld != null) {
           let card = currentMeld[0];//the only card inside currentMeld
           //check if card to add to meld is valid for currentSelectedMeld
-          if ((currentSelectedMeld[0].suit === card.suit && currentSelectedMeld[0].rank + 1 === card.rank)
-            || (currentSelectedMeld[currentSelectedMeld.length - 1].suit === card.suit && currentSelectedMeld[currentSelectedMeld.length - 1].rank - 1 === card.rank)
+          if ((currentSelectedMeld[0].suit === card.suit && currentSelectedMeld[0].rank - 1 === card.rank)
+            || (currentSelectedMeld[currentSelectedMeld.length - 1].suit === card.suit && currentSelectedMeld[currentSelectedMeld.length - 1].rank + 1 === card.rank)
           ) {
             //if the card is same suit and less than 1 from the first card in meld, or greater than 1 from the last card in meld
             this.sendWSData({
@@ -707,9 +707,6 @@ export default class Game extends Component {
         <button id="start-btn" style={{ display: !hasGameStarted ? "inline" : "none" }}
           onClick={this.startGame}>Start the game</button>
         <div id="card-table">
-          <button style={{ display: hasGameStarted ? "block" : "none" }}
-            id="deal" onClick={this.dealing}>DEAL</button>
-
           <button disabled={disableAddToMeldButton()} style={{ display: hasGameStarted ? "block" : "none" }}
             id="meld"
             onClick={() => this.setGameState("isMelding")}

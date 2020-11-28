@@ -9,12 +9,12 @@ async function requestJoin(code, userToken) {
         Authorization: "Bearer " + userToken
       }
     });
+    let responseJSON = await response.json();
 
-    if (response.status != 200) {
+    if (response.status !== 200) {
       throw responseJSON.message;
     } 
 
-    let responseJSON = await response.json();
 
 
     return responseJSON;

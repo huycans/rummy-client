@@ -383,7 +383,7 @@ var cards = function() {
       for (var i=0; i<this.length-1; i++ ){
         for (var j = 0; j < this.length - i - 1; j++)
           if (this[j].suit < this[j+1].suit ||
-            (this[j].suit == this[j + 1].suit && this[j].rank < this[j + 1].rank)){
+            (this[j].suit == this[j + 1].suit && this[j].rank > this[j + 1].rank)){
               var temp = this[j];
               this[j] = this[j + 1];
               this[j + 1] = temp; 
