@@ -96,6 +96,10 @@ a:visited {color:blue;}
 	width: 120px;
 }
 
+#replay{
+	width: 200px;
+}
+
 footer {
 	font-size : 12px;
 	color:grey;

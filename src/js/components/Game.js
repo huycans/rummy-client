@@ -34,7 +34,10 @@ export default class Game extends Component {
       code: "",
       //randomly generated token from the server
       token: "",
-      hint: ""
+      hint: "",
+      hasGameEnded: false,
+      winner: false,
+      score: 0,
     };
 
     this.handRef = React.createRef();
@@ -52,6 +55,19 @@ export default class Game extends Component {
     this.gameHandler = gameHandler.bind(this);
     this.moveMeldToPile = this.moveMeldToPile.bind(this);
     this.setHint = this.setHint.bind(this);
+    this.declareWinner = this.declareWinner.bind(this);
+  }
+
+  declareWinner(data){
+    this.setState({
+      hasGameEnded: true,
+      winner: data.cmd == "win" ? true: false,
+      score: data.score
+    });
+    //hide all the cards on the screen
+    this.state.cards.all.forEach((card) => $(card.el).hide());
+    this.state.ophand.forEach((card) => $(card.el).hide());
+
   }
 
   setHint(message) {
@@ -134,7 +150,7 @@ export default class Game extends Component {
     else {
       //the opponent is discarding a card
       //remove the top fake card from ophand, then add the card to discard from deck to ophand
-      $(ophand.topCard().el).hide()
+      $(ophand.topCard().el).hide();
       ophand.removeCard(ophand.topCard());
       ophand.addCard(deck.find((cardVal) => cardVal.suit == cardToDiscard.suit && cardVal.rank == cardToDiscard.rank));
 
@@ -366,7 +382,6 @@ export default class Game extends Component {
     //data is from the server
     //this is simply the animation, because the cards dealt is given by the server
     const { cards, discardPile, deck, myhand, ophand, meldPile } = this.state;
-    $('#deal').hide();
 
     //adding cards that is in player's hand
     for (let card of data.cards) {
@@ -480,8 +495,9 @@ export default class Game extends Component {
       //the card in local game
       let card = deck.find((cardVal) => cardVal.suit == cardToMoveToMeld.suit && cardVal.rank == cardToMoveToMeld.rank);
 
+      $(ophand.topCard().el).hide();
       ophand.removeCard(ophand.topCard());
-      ophand.render({ immediate: true });
+      // ophand.render({ immediate: true });
       
       ophand.addCard(card);
       //avoid rendering
@@ -682,7 +698,7 @@ export default class Game extends Component {
 
   render() {
     const { hasGameStarted } = this.props;
-    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isAddingToMeld, hint } = this.state;
+    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isAddingToMeld, hint, winner, score, hasGameEnded } = this.state;
     const disableAddToMeldButton = () => {
       if (isWaiting) {
         return true;
@@ -702,29 +718,39 @@ export default class Game extends Component {
       <div>
         <p>Welcome to the game</p>
         <div id="hint">
-          {hint}
+          {hasGameStarted && !hasGameEnded ? hint : null}
         </div>
         <button id="start-btn" style={{ display: !hasGameStarted ? "inline" : "none" }}
           onClick={this.startGame}>Start the game</button>
-        <div id="card-table">
-          <button disabled={disableAddToMeldButton()} style={{ display: hasGameStarted ? "block" : "none" }}
-            id="meld"
-            onClick={() => this.setGameState("isMelding")}
-          >Meld</button>
+        {
+          hasGameEnded ? 
+            <div id="game-winner">
+              <h1>{winner ? "You have won" : "You have lost"}</h1>
+              <h2>{winner ? "Your score: " : "Your opponent score: "} {score}</h2>
+              <button id="replay" onClick={() => window.location.reload()}>Play another game</button>
+            </div>
+            : 
+            <div id="card-table">
+              <button disabled={disableAddToMeldButton()} style={{ display: hasGameStarted ? "block" : "none" }}
+                id="meld"
+                onClick={() => this.setGameState("isMelding")}
+              >Meld</button>
 
-          <button disabled={disableAddToMeldButton()} style={{ display: hasGameStarted ? "block" : "none" }}
-            id="addtomeld"
-            onClick={() => this.setGameState("isAddingToMeld")}
-          >Add to meld</button>
+              <button disabled={disableAddToMeldButton()} style={{ display: hasGameStarted ? "block" : "none" }}
+                id="addtomeld"
+                onClick={() => this.setGameState("isAddingToMeld")}
+              >Add to meld</button>
 
-          <button style={{ display: hasGameStarted & (isMelding || isAddingToMeld) ? "block" : "none" }}
-            id="cancel-meld" onClick={this.cancelMeldOrAddToMeld}
-          >Cancel</button>
+              <button style={{ display: hasGameStarted & (isMelding || isAddingToMeld) ? "block" : "none" }}
+                id="cancel-meld" onClick={this.cancelMeldOrAddToMeld}
+              >Cancel</button>
 
-          <button style={{ display: hasGameStarted ? "block" : "none" }}
-            id="sort-hand" onClick={this.sortHand}
-          >Sort hand</button>
-        </div>
+              <button style={{ display: hasGameStarted ? "block" : "none" }}
+                id="sort-hand" onClick={this.sortHand}
+              >Sort hand</button>
+            </div>
+        }
+        
 
       </div>
     );

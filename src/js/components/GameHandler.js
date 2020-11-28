@@ -19,15 +19,12 @@ function gameHandler(message){
     this.moveMeldToPile(data)
   } else if (data.cmd == "addmeld") {
     this.moveCardToMeld(data);
-  } else if (data.cmd == "click") {
-
+  } else if (data.cmd == "win" || data.cmd == "loss") {
+    this.declareWinner(data)
   } else if (data.cmd == "ping") {
 
   } else if (data.cmd == "exit") {
 
-  } else if (data.cmd == "win") {
-
-  } else if (data.cmd == "loss") {
 
   }
 }
