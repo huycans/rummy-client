@@ -21,10 +21,9 @@ function gameHandler(message){
     this.moveCardToMeld(data);
   } else if (data.cmd == "win" || data.cmd == "loss") {
     this.declareWinner(data)
-  } else if (data.cmd == "ping") {
-
   } else if (data.cmd == "exit") {
-
+    this.props.setErrorMessage("Lobby is full. Please choose another lobby code. ")
+  } else if (data.cmd == "ping") {
 
   }
 }
