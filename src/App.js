@@ -7,6 +7,7 @@ import Signin from "./js/components/Signin";
 import Signup from './js/components/Signup';
 import AuthRoute from "./js/components/AuthRoute";
 import Game from "./js/components/Game";
+import DefaultRoute from "./js/components/Default";
 
 import { signin, signup, checkSession } from './js/components/API/account';
 
@@ -43,6 +44,7 @@ class App extends Component {
   }
 
   async componentDidMount() {
+    
     //setup websocket
     let serverWebsocketURL = process.env.WSS || "wss://localhost:3000";
     // this.setState({ websocket: new WebSocket(serverWebsocketURL) });
@@ -50,7 +52,7 @@ class App extends Component {
     try {
       //check if game state still valid
       let localstate = JSON.parse(localStorage.getItem("appState"));
-      console.log(localstate);
+      console.log("localstate", localstate);
       if (localstate) {
         //if local game state exist
         //assume that local game state only exist if the user has signin/signup before
@@ -74,6 +76,7 @@ class App extends Component {
       });
 
     } catch (error) {
+      console.log(error);
       this.setState({
         isFinishedLoading: true,
         errorMsg: "Cannot check user's token. Please signin again."
@@ -213,13 +216,13 @@ class App extends Component {
                       : null
                     }
 
-                    <AuthRoute isSignedIn={isSignedIn} type="guest" path="/">
+                    <AuthRoute isSignedIn={isSignedIn} type="guest" path="/" exact>
                       <Signin signin={this.signin} handleInputUsername={this.handleInputUsername}
                         handleInputPassword={this.handleInputPassword}
                         username={username} password={password} />
                     </AuthRoute>
 
-
+                    <DefaultRoute/>
                   </Switch>
                 </div>
                 : <p>Is Loading</p>
