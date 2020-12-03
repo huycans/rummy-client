@@ -305,7 +305,7 @@ export default class Game extends Component {
 
     //Now lets create a couple of hands, one face down, one face up.
     var myhand = new cards.Hand({ faceUp: true, y: 340 });
-    var ophand = new cards.Hand({ faceUp: true, y: 60 });
+    var ophand = new cards.Hand({ faceUp: false, y: 60 });
 
     //Lets add a discard pile
     var discardPile = new cards.Deck({ faceUp: true });
