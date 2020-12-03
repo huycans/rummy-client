@@ -37,6 +37,7 @@ export default class Game extends Component {
       hint: "",
       hasGameEnded: false,
       winner: false,
+      gamedraw: false,
       score: 0,
     };
 
@@ -62,6 +63,7 @@ export default class Game extends Component {
     this.setState({
       hasGameEnded: true,
       winner: data.cmd == "win" ? true: false,
+      gamedraw: data.cmd == "gamedraw" ? true : false,
       score: data.score
     });
     //hide all the cards on the screen
@@ -701,7 +703,7 @@ export default class Game extends Component {
 
   render() {
     const { hasGameStarted } = this.props;
-    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isAddingToMeld, hint, winner, score, hasGameEnded } = this.state;
+    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isAddingToMeld, hint, winner, gamedraw, score, hasGameEnded } = this.state;
     const disableAddToMeldButton = () => {
       if (isWaiting) {
         return true;
@@ -728,8 +730,15 @@ export default class Game extends Component {
         {
           hasGameEnded ? 
             <div id="game-winner">
-              <h1>{winner ? "You have won" : "You have lost"}</h1>
-              <h2>{winner ? "Your score: " : "Your opponent score: "} {score}</h2>
+              {gamedraw ? 
+                <h1>The deck is out of cards. The game is a draw.</h1>
+                :
+                <React.Fragment>
+                  <h1>{winner ? "You have won" : "You have lost"}</h1>
+                  <h2>{winner ? "Your score: " : "Your opponent score: "} {score}</h2>
+                </React.Fragment>
+              }
+              
               <button id="replay" onClick={() => window.location.reload()}>Play another game</button>
             </div>
             : 

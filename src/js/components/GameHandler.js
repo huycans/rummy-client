@@ -19,7 +19,7 @@ function gameHandler(message){
     this.moveMeldToPile(data)
   } else if (data.cmd == "addmeld") {
     this.moveCardToMeld(data);
-  } else if (data.cmd == "win" || data.cmd == "loss") {
+  } else if (data.cmd == "win" || data.cmd == "loss" || data.cmd == "gamedraw") {
     this.declareWinner(data)
   } else if (data.cmd == "exit") {
     this.props.setErrorMessage("Lobby is full. Please choose another lobby code. ")
