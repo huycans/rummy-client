@@ -113,3 +113,7 @@ footer a, footer a:visited{
 footer a:hover {
 	color:black;
 }
+
+#lobbycode {
+	margin: 20px 20px 20px 0;
+}

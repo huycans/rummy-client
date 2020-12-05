@@ -1,6 +1,6 @@
 async function requestJoin(code, userToken) {
   try {
-    let response = await fetch("https://localhost:3000/join/" + code, {
+    let response = await fetch("https://localhost:3000/join/" + encodeURIComponent(code) , {
       method: "GET",
       headers: {
         Accept: "application/json",
@@ -14,8 +14,6 @@ async function requestJoin(code, userToken) {
     if (response.status !== 200) {
       throw responseJSON.message;
     } 
-
-
 
     return responseJSON;
   }

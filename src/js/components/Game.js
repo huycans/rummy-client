@@ -39,6 +39,7 @@ export default class Game extends Component {
       winner: false,
       gamedraw: false,
       score: 0,
+      lobbycode: ""
     };
 
     this.handRef = React.createRef();
@@ -57,6 +58,11 @@ export default class Game extends Component {
     this.moveMeldToPile = this.moveMeldToPile.bind(this);
     this.setHint = this.setHint.bind(this);
     this.declareWinner = this.declareWinner.bind(this);
+    this.handleLobbyCode = this.handleLobbyCode.bind(this);
+  }
+
+  handleLobbyCode(e){
+    this.setState({lobbycode: e.target.value});
   }
 
   declareWinner(data){
@@ -122,7 +128,7 @@ export default class Game extends Component {
   }
 
   //setup websocket connection to the server
-  async joinGameWithCode(code = "12345678979", userToken) {
+  async joinGameWithCode(code, userToken) {
     try {
 
       //request to join a game with code typed in by user
@@ -141,6 +147,9 @@ export default class Game extends Component {
     } catch (error) {
       console.log("An error occurs when trying to join: ", error);
       this.props.setErrorMessage("An error occurs when trying to join " + error);
+      this.setState({
+        hasGameStarted: false
+      })
     }
   }
 
@@ -295,10 +304,16 @@ export default class Game extends Component {
       e.stopPropagation();
       e.preventDefault();
     }
+    let { cards, lobbycode } = this.state;
+    this.props.setErrorMessage("");
+    let lobbycodeRegex = /^[a-zA-Z0-9]{5,12}$/;
+    if (lobbycode == "" || !lobbycodeRegex.test(lobbycode)){
+      this.props.setErrorMessage("Room code must contain between 5 and 12 alphanumeric characters.");
+      return;
+    }
+
     this.props.startingGame();
 
-    console.log("Starting game");
-    let { cards } = this.state;
 
     //Create a new deck of cards
     var deck = new cards.Deck();
@@ -383,7 +398,7 @@ export default class Game extends Component {
     });
 
     //setup websocket connection and handle it
-    this.joinGameWithCode("12131313", this.props.userToken);
+    this.joinGameWithCode(lobbycode, this.props.userToken);
 
   }
 
@@ -711,7 +726,7 @@ export default class Game extends Component {
 
   render() {
     const { hasGameStarted } = this.props;
-    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isAddingToMeld, hint, winner, gamedraw, score, hasGameEnded } = this.state;
+    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isAddingToMeld, hint, winner, gamedraw, score, hasGameEnded, lobbycode } = this.state;
     const disableAddToMeldButton = () => {
       if (isWaiting) {
         return true;
@@ -733,7 +748,15 @@ export default class Game extends Component {
         <div id="hint">
           {hasGameStarted && !hasGameEnded ? hint : null}
         </div>
-        <button id="start-btn" style={{ display: !hasGameStarted ? "inline" : "none" }}
+        <div id="lobbycode">
+          <label style={{ display: !hasGameStarted ? "inline" : "none" }}>Enter a room code (must contains between 5 and 12 alphanumeric characters): &nbsp;&nbsp;
+          <input style={{ display: !hasGameStarted ? "inline" : "none" }}
+              value={lobbycode} onChange={this.handleLobbyCode}
+              type="text" placeholder="Room code" />
+          </label>
+        </div>
+
+        <button id="start-btn" style={{ display: !hasGameStarted ? "block" : "none" }}
           onClick={this.startGame}>Start the game</button>
         {
           hasGameEnded ? 
