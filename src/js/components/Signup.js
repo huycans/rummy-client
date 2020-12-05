@@ -33,7 +33,7 @@ const Signup = ({ handleInputUsername, handleInputPassword, username, password, 
                 <div className="row w-100">
                   <label htmlFor="username">
                     Password: &nbsp;
-                  <input minLength={5} maxLength={50} type="password" name="password" value={password}
+                  <input minLength={8} maxLength={20} type="password" name="password" value={password}
                       onChange={handleInputPassword} />
                   </label>
                   <br />

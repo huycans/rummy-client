@@ -22,11 +22,9 @@ function gameHandler(message){
   } else if (data.cmd == "win" || data.cmd == "loss" || data.cmd == "gamedraw") {
     this.declareWinner(data)
   } else if (data.cmd == "exit") {
-    this.props.setErrorMessage("Lobby is full or not available. Please choose another lobby code. ")
+    this.props.setErrorMessage("Lobby is full or not available. Please choose another lobby code.")
   } else if (data.cmd == "error") {
     this.props.setErrorMessage(data.message)
-  } else if (data.cmd == "ping") {
-
   }
 }
 

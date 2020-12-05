@@ -35,13 +35,13 @@ class App extends Component {
     this.toggleLoading = this.toggleLoading.bind(this);
     this.signin = this.signin.bind(this);
     this.signup = this.signup.bind(this);
-    this.validate = this.validate.bind(this);
     this.handleInputUsername = this.handleInputUsername.bind(this);
     this.handleInputPassword = this.handleInputPassword.bind(this);
     this.setErrorMessage = this.setErrorMessage.bind(this);
     this.startingGame = this.startingGame.bind(this);
+    this.validateUsernamePassword = this.validateUsernamePassword.bind(this);
 
-  }
+  } 
 
   async componentDidMount() {
     
@@ -106,79 +106,84 @@ class App extends Component {
     this.setState({ password: event.target.value });
   }
   setErrorMessage(message) {
+    // throw Error(message);
     this.setState({ errorMsg: message });
   }
 
+  validateUsernamePassword(){
+    const {username, password} = this.state;
+    //username length must be between 3 and 50
+    if (username.length < 3 || username.length >50 ){
+      this.setErrorMessage("Username must be between 3 and 50 characters.")
+      return false;
+    }
+    let passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,20}$/;
+    if (!passwordRegex.test(password)){
+      this.setErrorMessage("Password must have a minimum of 8 and a maximum of 20 characters, at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&_).");
+      return false;
+    }
+    return true;
+
+  }
   async signin() {
     this.setState({ isLoading: true, errorMsg: "" });
-    try {
-      if (!this.validate()) {
-        this.setErrorMessage("Username or password is invalid. Please try again.");
-        return;
+    if (this.validateUsernamePassword()) {
+      try {
+        //message will be a userToken, save it
+        let response = await signin(this.state.username, this.state.password);
+        this.setState({
+          userToken: response.token,
+          user: response.user
+        });
+
+        //save user's info
+        localStorage.setItem("appState", JSON.stringify({
+          username: this.state.username,
+          user: this.state.user,
+          userToken: this.state.userToken,
+        }));
+
+
+      } catch (error) {
+        this.setErrorMessage(error.message);
+      } finally {
+        this.setState({ isLoading: false });
       }
-
-      //message will be a userToken, save it
-      let response = await signin(this.state.username, this.state.password);
-      this.setState({
-        userToken: response.token,
-        user: response.user
-      });
-
-      //save user's info
-      localStorage.setItem("appState", JSON.stringify({
-        username: this.state.username,
-        user: this.state.user,
-        userToken: this.state.userToken,
-      }));
-
-
-    } catch (error) {
-      this.setErrorMessage(error.message);
-    } finally {
-      this.setState({ isLoading: false });
+    }
+    else {
+      this.setErrorMessage("Username or password is invalid. Please try again.");
     }
   }
 
   async signup() {
     this.setState({ isLoading: true, errorMsg: "" });
-    try {
-      if (!this.validate()) {
-        this.setErrorMessage("Username or password is invalid. Please try again.");
-        return;
+    if (this.validateUsernamePassword()){
+      try {
+        //message will be a userToken, save it
+        let response = await signup(this.state.username, this.state.password);
+
+        this.setState({
+          userToken: response.token,
+          user: response.user,
+        });
+
+        //save user's info
+        localStorage.setItem("appState", JSON.stringify({
+          username: this.state.username,
+          user: this.state.user,
+          userToken: this.state.userToken,
+        }));
+
+      } catch (error) {
+        this.setErrorMessage(error.message);
+      } finally {
+        this.setState({ isLoading: false });
       }
-
-      //message will be a userToken, save it
-      let response = await signup(this.state.username, this.state.password);
-
-      this.setState({
-        userToken: response.token,
-        user: response.user,
-      });
-
-      //save user's info
-      localStorage.setItem("appState", JSON.stringify({
-        username: this.state.username,
-        user: this.state.user,
-        userToken: this.state.userToken,
-      }));
-
-    } catch (error) {
-      this.setErrorMessage(error.message);
-    } finally {
-      this.setState({ isLoading: false });
+    }
+    else {
+      this.setErrorMessage("Username or password is invalid. Please try again.");
     }
   }
-
-  validate() {
-    const { username, password } = this.state;
-
-    //validate, if valid, send to server
-    if (username.length > 50 || password.length > 50) {
-      return false; //alert("Email or password is invalid. Please try again.");
-    }
-    else return true;
-  }
-
 
   toggleLoading() {
     //toggle the spinning icon 

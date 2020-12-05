@@ -69,7 +69,15 @@ export default class Game extends Component {
     //hide all the cards on the screen
     this.state.cards.all.forEach((card) => $(card.el).hide());
     this.state.ophand.forEach((card) => $(card.el).hide());
-
+    this.state.myhand.forEach((card) => $(card.el).hide());
+    this.state.discardPile.forEach((card) => $(card.el).hide());
+    this.state.meldPile.forEach(
+      (meld => {
+        meld.forEach(
+          (card) => $(card.el).hide()
+        )
+      })
+      );
   }
 
   setHint(message) {
