@@ -113,13 +113,9 @@ class App extends Component {
   validateUsernamePassword(){
     const {username, password} = this.state;
     //username length must be between 3 and 50
-    if (username.length < 3 || username.length >50 ){
-      this.setErrorMessage("Username must be between 3 and 50 characters.")
-      return false;
-    }
     let passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&_])[A-Za-z\d@$!%*?&_]{8,20}$/;
-    if (!passwordRegex.test(password)){
-      this.setErrorMessage("Password must have a minimum of 8 and a maximum of 20 characters, at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&_).");
+    let usernameRegex = /^[A-Za-z\d@._]{3,50}$/;
+    if (!usernameRegex.test(username) || !passwordRegex.test(password) ){
       return false;
     }
     return true;

@@ -43,6 +43,14 @@ const Signup = ({ handleInputUsername, handleInputPassword, username, password, 
                   <input type="submit" value="Signup" onClick={signingUp}/>
                 </div>
               </form>
+              <div style={{ marginTop: "20px" }} className="row">
+                <p>
+                  Username must be between 3 and 50 characters, contains only alphanumerics or special characters (@._).
+              </p>
+                <p>
+                  Password must be between 8 and 20 characters, at least one uppercase letter, one lowercase letter, one number and one special character (@$!%*?&_).
+              </p>
+              </div>
             </div>
             <div>
               <br />
