@@ -26,7 +26,7 @@ class App extends Component {
       errorMsg: "",
       username: "",
       password: "",
-      user: "",
+      user: null,
       userToken: "",
       hasGameStarted: false,
       websocket: null,
@@ -212,6 +212,7 @@ class App extends Component {
                           setErrorMessage={this.setErrorMessage}
                           websocket={websocket}
                           userToken={userToken}
+                          user={user}
                         />
                       </AuthRoute>
                       : null

@@ -130,7 +130,6 @@ export default class Game extends Component {
   //setup websocket connection to the server
   async joinGameWithCode(code, userToken) {
     try {
-
       //request to join a game with code typed in by user
       let joinResponse = await requestJoin(code, userToken);
 
@@ -141,8 +140,10 @@ export default class Game extends Component {
         code, token
       });
 
+      let userId = this.props.user.id;
+
       //send request to join a game
-      this.sendWSData({ cmd: "join" });
+      this.sendWSData({ cmd: "join", userId: userId });
 
     } catch (error) {
       console.log("An error occurs when trying to join: ", error);
