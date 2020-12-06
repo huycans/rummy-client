@@ -745,8 +745,6 @@ export default class Game extends Component {
       }
       return true;
     };
-    const displayClassname = (typeOfElem) => !hasGameStarted ? typeOfElem : "none";
-    const displayCancel = () => hasGameStarted && (isMelding || isAddingToMeld) ? displayClassname("block") : displayClassname("none");
 
     return (
       <div>
