@@ -745,6 +745,8 @@ export default class Game extends Component {
       }
       return true;
     };
+    const displayClassname = (typeOfElem) => !hasGameStarted ? typeOfElem : "none";
+    const displayCancel = () => hasGameStarted && (isMelding || isAddingToMeld) ? displayClassname("block") : displayClassname("none");
 
     return (
       <div>
@@ -757,14 +759,14 @@ export default class Game extends Component {
           {hasGameStarted && !hasGameEnded ? hint : null}
         </div>
         <div id="lobbycode">
-          <label style={{ display: !hasGameStarted ? "inline" : "none" }}>Enter a room code (must contains between 5 and 12 alphanumeric characters): &nbsp;&nbsp;
-          <input style={{ display: !hasGameStarted ? "inline" : "none" }}
+          <label className={!hasGameStarted ? "inline" : "none" }>Enter a room code (must contains between 5 and 12 alphanumeric characters): &nbsp;&nbsp;
+          <input className={!hasGameStarted ? "inline" : "none"}
               value={lobbycode} onChange={this.handleLobbyCode}
               type="text" placeholder="Room code" />
           </label>
         </div>
 
-        <button id="start-btn" style={{ display: !hasGameStarted ? "block" : "none" }}
+        <button id="start-btn" className={!hasGameStarted ? "block" : "none"} 
           onClick={this.startGame}>Start the game</button>
         {
           hasGameEnded ? 
@@ -782,21 +784,21 @@ export default class Game extends Component {
             </div>
             : 
             <div id="card-table">
-              <button disabled={disableAddToMeldButton()} style={{ display: hasGameStarted ? "block" : "none" }}
+              <button disabled={disableAddToMeldButton()} className={hasGameStarted ? "block" : "none"}
                 id="meld"
                 onClick={() => this.setGameState("isMelding")}
               >Meld</button>
 
-              <button disabled={disableAddToMeldButton()} style={{ display: hasGameStarted ? "block" : "none" }}
+              <button disabled={disableAddToMeldButton()} className={hasGameStarted ? "block" : "none"}
                 id="addtomeld"
                 onClick={() => this.setGameState("isAddingToMeld")}
               >Add to meld</button>
 
-              <button style={{ display: hasGameStarted && (isMelding || isAddingToMeld) ? "block" : "none" }}
+              <button className={hasGameStarted && (isMelding || isAddingToMeld) ? "block" : "none"} 
                 id="cancel-meld" onClick={this.cancelMeldOrAddToMeld}
               >Cancel</button>
 
-              <button style={{ display: hasGameStarted ? "block" : "none" }}
+              <button className={hasGameStarted ? "block" : "none" }
                 id="sort-hand" onClick={this.sortHand}
               >Sort hand</button>
             </div>

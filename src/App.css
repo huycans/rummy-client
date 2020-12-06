@@ -123,3 +123,15 @@ footer a:hover {
 	left: 700px;
 	top: 190px;
 }
+
+.none{
+	display: none;
+}
+
+.block{
+	display: block;
+}
+
+.inline{
+	display: inline;
+}
