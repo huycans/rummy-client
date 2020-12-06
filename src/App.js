@@ -17,6 +17,7 @@ import {
   Route,
   Link
 } from "react-router-dom";
+import Stats from "./js/components/Stats";
 
 class App extends Component {
   constructor(props) {
@@ -40,8 +41,22 @@ class App extends Component {
     this.setErrorMessage = this.setErrorMessage.bind(this);
     this.startingGame = this.startingGame.bind(this);
     this.validateUsernamePassword = this.validateUsernamePassword.bind(this);
+    this.updateUserInfo = this.updateUserInfo.bind(this);
 
   } 
+
+  updateUserInfo(userInfo){
+    this.setState({
+      user: {
+        ...this.state.user,
+        gameWon: userInfo.gameWon,
+        gameLost: userInfo.gameLost,
+        gamePlayed: userInfo.gamePlayed,
+        gameHistory: userInfo.gameHistory,
+        gameDraw: userInfo.gameDraw
+      }
+    })
+  }
 
   async componentDidMount() {
     
@@ -56,8 +71,8 @@ class App extends Component {
       if (localstate) {
         //if local game state exist
         //assume that local game state only exist if the user has signin/signup before
-        let isUserTokenValid = await checkSession(localstate.userToken);
-        if (isUserTokenValid) {
+        let userInfo = await checkSession(localstate.userToken);
+        if (userInfo!=null) {
           this.setState({
             user: localstate.user,
             username: localstate.username,
@@ -213,6 +228,17 @@ class App extends Component {
                           websocket={websocket}
                           userToken={userToken}
                           user={user}
+                        />
+                      </AuthRoute>
+                      : null
+                    }
+
+                    {user != null ?
+                      <AuthRoute isSignedIn={isSignedIn} type="private" path="/stats">
+                        <Stats 
+                          user={user}
+                          userToken={userToken}
+                          updateUserInfo={this.updateUserInfo}
                         />
                       </AuthRoute>
                       : null

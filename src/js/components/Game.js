@@ -5,6 +5,113 @@ import $ from 'jquery';
 
 import { requestJoin } from "../components/API/game";
 import gameHandler from "./GameHandler";
+import { Link } from "react-router-dom";
+import { makeHistory } from "./helper";
+
+const tempHistory = [
+  {
+    "cmd": "draw",
+    "from": "deck",
+    "player": 0,
+    "card": {
+      "suit": "c",
+      "rank": 13
+    }
+  },
+  {
+    "cmd": "newmeld",
+    "player": 0,
+    "meld": [
+      {
+        "suit": "s",
+        "rank": 1
+      },
+      {
+        "suit": "s",
+        "rank": 2
+      },
+      {
+        "suit": "s",
+        "rank": 3
+      }
+    ]
+  },
+  {
+    "cmd": "newmeld",
+    "player": 0,
+    "meld": [
+      {
+        "suit": "s",
+        "rank": 4
+      },
+      {
+        "suit": "s",
+        "rank": 5
+      },
+      {
+        "suit": "s",
+        "rank": 6
+      }
+    ]
+  },
+  {
+    "cmd": "newmeld",
+    "player": 0,
+    "meld": [
+      {
+        "suit": "s",
+        "rank": 7
+      },
+      {
+        "suit": "s",
+        "rank": 8
+      },
+      {
+        "suit": "s",
+        "rank": 9
+      }
+    ]
+  },
+  {
+    "cmd": "addmeld",
+    "player": 0,
+    "card": {
+      "suit": "s",
+      "rank": 10
+    },
+    "meld": [
+      {
+        "suit": "s",
+        "rank": 7
+      },
+      {
+        "suit": "s",
+        "rank": 8
+      },
+      {
+        "suit": "s",
+        "rank": 9
+      },
+      {
+        "suit": "s",
+        "rank": 10
+      }
+    ]
+  },
+  {
+    "cmd": "discard",
+    "player": 0,
+    "card": {
+      "suit": "c",
+      "rank": 13
+    }
+  },
+  {
+    "cmd": "win",
+    "score": 58,
+    "player": 0
+  }
+]
 
 export default class Game extends Component {
   constructor(props) {
@@ -39,7 +146,8 @@ export default class Game extends Component {
       winner: false,
       gamedraw: false,
       score: 0,
-      lobbycode: ""
+      lobbycode: "",
+      history: []
     };
 
     this.handRef = React.createRef();
@@ -727,7 +835,9 @@ export default class Game extends Component {
 
   render() {
     const { hasGameStarted } = this.props;
-    const { isMelding, hasDiscarded, hasDrawn, isWaiting, isAddingToMeld, hint, winner, gamedraw, score, hasGameEnded, lobbycode } = this.state;
+    const { isMelding, hasDiscarded, hasDrawn, isWaiting, 
+      isAddingToMeld, hint, winner, gamedraw, 
+      score, hasGameEnded, lobbycode, history } = this.state;
     const disableAddToMeldButton = () => {
       if (isWaiting) {
         return true;
@@ -742,10 +852,13 @@ export default class Game extends Component {
       return true;
     };
 
-    const handref = <div id="hand" ref={this.handRef} />;
     return (
       <div>
+        <div id="history_list">
+          {makeHistory(history)}
+        </div>
         <p>Welcome to the game</p>
+        <p><Link to="/stats">View your stats</Link> </p>
         <div id="hint">
           {hasGameStarted && !hasGameEnded ? hint : null}
         </div>

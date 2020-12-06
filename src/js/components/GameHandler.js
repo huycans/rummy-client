@@ -26,6 +26,10 @@ function gameHandler(message){
   } else if (data.cmd == "error") {
     this.props.setErrorMessage(data.message)
   }
+
+  if (data.history){
+    this.setState({history: data.history})
+  }
 }
 
 export default gameHandler;

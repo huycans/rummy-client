@@ -83,9 +83,9 @@ async function checkSession(sessionToken) {
     });
     let responseJSON = await response.json();
     if (responseJSON.success == false && responseJSON.status == "JWT invalid") {
-      return false;
+      return null;
     } else {
-      return true;
+      return responseJSON.user;
     }
   } catch (error) {
     throw error;
