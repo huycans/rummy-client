@@ -191,7 +191,7 @@ export default class Game extends Component {
     deck.render();
   }
 
-  setGameState(stateToSet, addtionalStates = {}, callback) {
+  setGameState(stateToSet, addtionalStates = {}) {
     let hint = "";
     switch (stateToSet) {
       case "isMelding":
@@ -220,7 +220,7 @@ export default class Game extends Component {
       isDiscarding: stateToSet == "isDiscarding" ? true : false, //(remove 1 card from hand to discard pile),
       hint,
       ...addtionalStates
-    }, callback);
+    });
   }
 
   draw(data) {
