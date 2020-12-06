@@ -71,21 +71,21 @@ var cards = function() {
     }
     
     $('.card').on("click", mouseEvent);
-    shuffle(all);
+    // shuffle(all);
   }
 
-  function shuffle(deck) {
-    //Fisher yates shuffle
-    var i = deck.length;
-    if (i == 0) return;
-    while (--i) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var tempi = deck[i];
-      var tempj = deck[j];
-      deck[i] = tempj;
-      deck[j] = tempi;
-    }
-  }
+  // function shuffle(deck) {
+  //   //Fisher yates shuffle
+  //   var i = deck.length;
+  //   if (i == 0) return;
+  //   while (--i) {
+  //     var j = Math.floor(Math.random() * (i + 1));
+  //     var tempi = deck[i];
+  //     var tempj = deck[j];
+  //     deck[i] = tempj;
+  //     deck[j] = tempi;
+  //   }
+  // }
 
   function Card(suit, rank, table) {
     this.init(suit, rank, table);
@@ -430,7 +430,7 @@ var cards = function() {
     Deck: Deck,
     Hand: Hand,
     Pile: Pile,
-    shuffle: shuffle
+    // shuffle: shuffle
   };
 };
 

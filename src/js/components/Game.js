@@ -504,7 +504,7 @@ export default class Game extends Component {
         //move cards from myhand to the meld that needs adding
 
         //the card in local game
-        let card = myhand.find((cardVal) => cardVal.rank == cardToMoveToMeld.rank && cardVal.rank == cardToMoveToMeld.rank);
+        let card = myhand.find((cardVal) => cardVal.rank == cardToMoveToMeld.rank && cardVal.suit == cardToMoveToMeld.suit);
         currentSelectedMeld.addCard(card);
         // myhand.removeCard(card);
       }
@@ -792,7 +792,7 @@ export default class Game extends Component {
                 onClick={() => this.setGameState("isAddingToMeld")}
               >Add to meld</button>
 
-              <button style={{ display: hasGameStarted & (isMelding || isAddingToMeld) ? "block" : "none" }}
+              <button style={{ display: hasGameStarted && (isMelding || isAddingToMeld) ? "block" : "none" }}
                 id="cancel-meld" onClick={this.cancelMeldOrAddToMeld}
               >Cancel</button>
 
