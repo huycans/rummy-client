@@ -578,7 +578,7 @@ export default class Game extends Component {
               meldId: currentSelectedMeld.id
             });
           }
-          else alert("Cannot add this card into this meld");
+          else this.setHint("Cannot add this card into this meld");
 
         }
       }
@@ -629,7 +629,7 @@ export default class Game extends Component {
         });
       }
       else {
-        alert("meld not valid");
+        this.setHint("Meld not valid");
       }
       myhand.render();
       currentMeld.render();

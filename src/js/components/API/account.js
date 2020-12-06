@@ -6,8 +6,7 @@ async function signin(username, password){
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
-        "Access-Control-Allow-Origin": "*"
+        Accept: "application/json"
       },
       body: JSON.stringify({
         username: username,
@@ -31,8 +30,7 @@ async function signup(username, password) {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        Accept: "application/json",
-        "Access-Control-Allow-Origin": "*"
+        Accept: "application/json"
       },
       body: JSON.stringify({
         username: username,
@@ -57,7 +55,6 @@ async function checkSession(sessionToken) {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
-        "Access-Control-Allow-Origin": "*",
         Authorization: "Bearer " + sessionToken
       }
     });
