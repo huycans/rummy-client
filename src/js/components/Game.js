@@ -202,7 +202,7 @@ export default class Game extends Component {
     let { websocket } = this.props;
     //setup websocket events
     websocket.onopen = (event) => {
-      console.log("Connected to server.");
+      // console.log("Connected to server.");
     };
 
     //starting an instance of card.js
@@ -242,7 +242,7 @@ export default class Game extends Component {
       let joinResponse = await requestJoin(code, userToken);
 
       let token = joinResponse.token;
-      console.log(token);
+      // console.log(token);
 
       this.setState({
         code, token
@@ -254,7 +254,7 @@ export default class Game extends Component {
       this.sendWSData({ cmd: "join", userId: userId });
 
     } catch (error) {
-      console.log("An error occurs when trying to join: ", error);
+      // console.log("An error occurs when trying to join: ", error);
       this.props.setErrorMessage("An error occurs when trying to join " + error);
       this.setState({
         hasGameStarted: false

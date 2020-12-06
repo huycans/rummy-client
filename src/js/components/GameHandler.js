@@ -5,7 +5,7 @@
 //split up to avoid 1000s of lines of code
 function gameHandler(message){
   let data = JSON.parse(message.data);
-  console.log("data from server", data);
+  // console.log("data from server", data);
 
   //initial setup with deck, discardPile and my hand
   if (data.cmd === "cards") {

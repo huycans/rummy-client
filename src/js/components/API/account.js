@@ -10,9 +10,9 @@ async function getServerMessage() {
         "Access-Control-Allow-Origin": "*"
       }
     });
-    console.log(response);
+    // console.log(response);
     let responseJSON = await response.json();
-    console.log(responseJSON)
+    // console.log(responseJSON)
     return responseJSON;
 } 
 catch (error) {

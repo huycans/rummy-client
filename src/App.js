@@ -67,7 +67,7 @@ class App extends Component {
     try {
       //check if game state still valid
       let localstate = JSON.parse(localStorage.getItem("appState"));
-      console.log("localstate", localstate);
+      // console.log("localstate", localstate);
       if (localstate) {
         //if local game state exist
         //assume that local game state only exist if the user has signin/signup before
@@ -91,7 +91,7 @@ class App extends Component {
       });
 
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       this.setState({
         isFinishedLoading: true,
         errorMsg: "Cannot check user's token. Please signin again."
