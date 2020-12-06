@@ -1,10 +1,9 @@
-import React, { Component } from 'react';
-import { ContextConsumer } from '../context';
+import React from 'react';
 import {
   Link
 } from "react-router-dom";
 
-const Default = ({ handleInputUsername, handleInputPassword, username, password, signin }) => {
+const Default = () => {
 
   return (
     <div className="container">

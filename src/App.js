@@ -14,8 +14,6 @@ import { signin, signup, checkSession } from './js/components/API/account';
 import {
   BrowserRouter,
   Switch,
-  Route,
-  Link
 } from "react-router-dom";
 import Stats from "./js/components/Stats";
 

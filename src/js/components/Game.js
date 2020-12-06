@@ -1,4 +1,4 @@
-import React, { Component, useRef } from "react";
+import React, { Component } from "react";
 // import Deck from './Cards/lib/deck';
 import Cards from './lib/card.js/cards';
 import $ from 'jquery';
@@ -7,111 +7,6 @@ import { requestJoin } from "../components/API/game";
 import gameHandler from "./GameHandler";
 import { Link } from "react-router-dom";
 import { makeHistory } from "./helper";
-
-const tempHistory = [
-  {
-    "cmd": "draw",
-    "from": "deck",
-    "player": 0,
-    "card": {
-      "suit": "c",
-      "rank": 13
-    }
-  },
-  {
-    "cmd": "newmeld",
-    "player": 0,
-    "meld": [
-      {
-        "suit": "s",
-        "rank": 1
-      },
-      {
-        "suit": "s",
-        "rank": 2
-      },
-      {
-        "suit": "s",
-        "rank": 3
-      }
-    ]
-  },
-  {
-    "cmd": "newmeld",
-    "player": 0,
-    "meld": [
-      {
-        "suit": "s",
-        "rank": 4
-      },
-      {
-        "suit": "s",
-        "rank": 5
-      },
-      {
-        "suit": "s",
-        "rank": 6
-      }
-    ]
-  },
-  {
-    "cmd": "newmeld",
-    "player": 0,
-    "meld": [
-      {
-        "suit": "s",
-        "rank": 7
-      },
-      {
-        "suit": "s",
-        "rank": 8
-      },
-      {
-        "suit": "s",
-        "rank": 9
-      }
-    ]
-  },
-  {
-    "cmd": "addmeld",
-    "player": 0,
-    "card": {
-      "suit": "s",
-      "rank": 10
-    },
-    "meld": [
-      {
-        "suit": "s",
-        "rank": 7
-      },
-      {
-        "suit": "s",
-        "rank": 8
-      },
-      {
-        "suit": "s",
-        "rank": 9
-      },
-      {
-        "suit": "s",
-        "rank": 10
-      }
-    ]
-  },
-  {
-    "cmd": "discard",
-    "player": 0,
-    "card": {
-      "suit": "c",
-      "rank": 13
-    }
-  },
-  {
-    "cmd": "win",
-    "score": 58,
-    "player": 0
-  }
-]
 
 export default class Game extends Component {
   constructor(props) {
@@ -263,8 +158,7 @@ export default class Game extends Component {
   }
 
   discard(data) {
-    let { currentSelectedCardHand, isDiscarding, myhand, discardPile, ophand, deck } = this.state;
-    let self = this;
+    let { myhand, discardPile, ophand, deck } = this.state;
     let cardToDiscard = data.card;
 
     //if i am discarding the card
@@ -330,7 +224,7 @@ export default class Game extends Component {
   }
 
   draw(data) {
-    let { isDrawing, deck, discardPile, myhand, currentSelectedCardDeck, currentSelectedCardDiscard, ophand, cards } = this.state;
+    let {  deck, discardPile, myhand, ophand, cards } = this.state;
     let self = this;
     //if i am drawing the card
     // if (isDrawing && data.player == "me") { isDrawing is not needed anymore since the server will dictate when and where to draw
@@ -694,7 +588,7 @@ export default class Game extends Component {
   //this function handles melding process client side only, it does not move cards into the meld pile
   handleMeld() {
     let validMeld = false;
-    let { cards, myhand, currentMeld, meldPile } = this.state;
+    let { myhand, currentMeld } = this.state;
     let card = this.state.currentSelectedCardHand;
 
     //if there are less then 3 cards, just add them to currentMeld
