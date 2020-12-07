@@ -1,6 +1,8 @@
+import { SERVER_URL, SERVER_API } from '../../constants';
+
 async function requestJoin(code, userToken) {
   try {
-    let response = await fetch("https://localhost:3000/join/" + encodeURIComponent(code) , {
+    let response = await fetch(SERVER_URL + SERVER_API.JOIN + "/" + encodeURIComponent(code) , {
       method: "GET",
       headers: {
         Accept: "application/json",
