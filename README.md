@@ -7,3 +7,6 @@ This is the repo for the frontend code for my secure rummy game. Written in Reac
 A live demo of this project can be found here: https://rummy-cardgame.herokuapp.com/
 
 Note that this demo doesn't use SSL due to Heroku's limitation.
+
+# Credit
+Card images and rendering are based on https://github.com/einaregilsson/cards.js, written by einaregilsson.
