@@ -59,7 +59,7 @@ class App extends Component {
   async componentDidMount() {
     
     //setup websocket
-    let serverWebsocketURL = process.env.WSS || "wss://localhost:3000";
+    let serverWebsocketURL = process.env.WSS || "ws://localhost:3000";
     // this.setState({ websocket: new WebSocket(serverWebsocketURL) });
 
     try {
