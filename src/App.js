@@ -16,6 +16,7 @@ import {
   Switch,
 } from "react-router-dom";
 import Stats from "./js/components/Stats";
+import { WS } from "./js/constants";
 
 class App extends Component {
   constructor(props) {
@@ -59,7 +60,7 @@ class App extends Component {
   async componentDidMount() {
     
     //setup websocket
-    let serverWebsocketURL = process.env.WSS || "ws://localhost:3000";
+    let serverWebsocketURL = WS ;
     // this.setState({ websocket: new WebSocket(serverWebsocketURL) });
 
     try {
