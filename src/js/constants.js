@@ -1,6 +1,6 @@
 let FIXED_SERVER_URL = "", FIXED_WS_URL="";
 if (process.env.NODE_ENV == 'production') {
-  FIXED_SERVER_URL = "https://rummy-cardgame.herokuapp.com/";
+  FIXED_SERVER_URL = "https://rummy-cardgame.herokuapp.com";
   FIXED_WS_URL = "ws://rummy-cardgame.herokuapp.com";
 }
 const SERVER_URL = process.env.SERVER_URL || FIXED_SERVER_URL || "http://localhost:3000";
